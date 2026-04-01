@@ -13,10 +13,10 @@ This repo is the **domain-specific extension layer** of the
 
 本仓库是 [agent-rules](https://github.com/georgeokelly/agent-rules) 系统的**领域扩展层**。
 
-| Type / 类型 | Location / 路径 | Deployed to / 部署目标 |
-|---|---|---|
-| **Skills** (skills/) | `skills/<name>/SKILL.md` | `.cursor/skills/<name>/` |
-| **Commands** (commands/) | `commands/<name>.md` | `.cursor/commands/<name>.md` |
+| Type / 类型 | Location / 路径 | Cursor | Claude Code | Codex |
+|---|---|---|---|---|
+| **Skills** | `skills/<name>/SKILL.md` | `.cursor/skills/<name>/` | `.claude/skills/<name>/` | `.agents/skills/<name>/` |
+| **Commands** | `commands/<name>.md` | `.cursor/commands/` | `.claude/commands/` (legacy) | via AGENTS.md |
 
 **Why a separate repo? / 为什么单独一个仓库？**
 
@@ -30,11 +30,12 @@ This repo is the **domain-specific extension layer** of the
 
 ```
 agent-toolkit/                   ← This repo / 本仓库
-├── skills/                      ← Cursor Agent Skills / Cursor Agent 技能
+├── skills/                      ← Agent Skills (Cursor + Claude Code)
 │   └── <skill-name>/
-│       └── SKILL.md             # Skill entry point / 技能入口
+│       └── SKILL.md             # Cross-tool skill entry point / 跨工具技能入口
+│       └── references/          # Optional reference files / 可选参考文件
 │
-└── commands/                    ← Cursor slash-commands / Cursor 斜杠命令
+└── commands/                    ← Slash commands (Cursor + CC compatibility)
     └── <command-name>.md
 ```
 
@@ -70,12 +71,15 @@ git commit -m "Add agent-toolkit as submodule"
 
 ```bash
 mkdir -p skills/<skill-name>
-# Create skills/<skill-name>/SKILL.md — follow Cursor skill format
+# Create skills/<skill-name>/SKILL.md — cross-tool format (Cursor + CC compatible)
+# 创建 skills/<skill-name>/SKILL.md — 跨工具格式（Cursor + CC 兼容）
 git add skills/<skill-name>
 git commit -m "Add <skill-name> skill"
 ```
 
-`agent-sync` deploys it to `.cursor/skills/<skill-name>/` on next run.
+`agent-sync` deploys it to `.cursor/skills/`, `.claude/skills/`, and `.agents/skills/` on next run.
+
+`agent-sync` 下次运行时会部署到 `.cursor/skills/`、`.claude/skills/` 和 `.agents/skills/`。
 
 ---
 
@@ -87,7 +91,9 @@ git add commands/<command-name>.md
 git commit -m "Add <command-name> command"
 ```
 
-`agent-sync` deploys it to `.cursor/commands/<command-name>.md` on next run.
+`agent-sync` deploys it to `.cursor/commands/` and `.claude/commands/` on next run. Note: Claude Code has deprecated `.claude/commands/` in favor of `.claude/skills/`. For new content, prefer the skill format.
+
+`agent-sync` 下次运行时会部署到 `.cursor/commands/` 和 `.claude/commands/`。注意：Claude Code 已将 `.claude/commands/` 标记为 deprecated，推荐使用 skill 格式。
 
 ---
 

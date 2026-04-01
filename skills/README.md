@@ -8,9 +8,17 @@ A **Skill** is a structured prompt file (`SKILL.md`) that gives a Cursor Agent s
 
 ## How to Use / 如何使用
 
-Skills are deployed to `.cursor/skills/<skill-name>/` by `agent-sync`. Once deployed, reference a skill in your prompt:
+Skills are deployed by `agent-sync` to all three tools:
+- Cursor: `.cursor/skills/<skill-name>/`
+- Claude Code: `.claude/skills/<skill-name>/`
+- Codex: `.agents/skills/<skill-name>/`
 
-Skill 由 `agent-sync` 部署至 `.cursor/skills/<skill-name>/`。部署完成后，在 Cursor 中直接描述任务即可触发对应 skill：
+Skill 由 `agent-sync` 同时部署至三个工具：
+- Cursor: `.cursor/skills/<skill-name>/`
+- Claude Code: `.claude/skills/<skill-name>/`
+- Codex: `.agents/skills/<skill-name>/`
+
+Once deployed, reference a skill in your prompt / 部署完成后，直接描述任务即可触发对应 skill：
 
 > "Use the `parse-ncu` skill to analyze this profile."
 > "帮我用 `cluster-launch` skill 在 umbriel-b200-236 上启动任务。"
@@ -19,8 +27,7 @@ Skill 由 `agent-sync` 部署至 `.cursor/skills/<skill-name>/`。部署完成�
 
 ```bash
 mkdir -p skills/<skill-name>
-# Create skills/<skill-name>/SKILL.md following the Cursor skill format
-# See https://github.com/georgeokelly/agent-rules for the skill template
+# Create skills/<skill-name>/SKILL.md — cross-tool format (Cursor + CC)
 git add skills/<skill-name>
 git commit -m "Add <skill-name> skill"
 ```
@@ -28,6 +35,25 @@ git commit -m "Add <skill-name> skill"
 See [Naming Conventions](../README.md#naming-conventions--命名约定) in the root README for naming rules.
 
 命名规范见根目录 README 的 [Naming Conventions](../README.md#naming-conventions--命名约定) 一节。
+
+### SKILL.md Frontmatter Checklist
+
+Required:
+- `name` — skill name / 技能名称
+- `description` — concise one-line description / 简洁描述
+
+Recommended (CC-native / CC 原生字段):
+- `when_to_use` — tells the model when to trigger this skill / 告诉模型何时触发此 skill
+- `argument-hint` — parameter format hint / 参数格式提示
+
+Optional:
+- `paths` — conditional activation by file path, use YAML list syntax / 按路径条件激活（使用 YAML 列表格式）
+- `allowed-tools` — restrict available tools during skill execution / 限制可用工具
+- `context` — `inline` (default) or `fork` (sub-agent) / 内联或子 agent
+
+Note: CC ignores unknown frontmatter fields, Cursor ignores CC-specific fields. One SKILL.md serves both tools.
+
+注意：CC 忽略不认识的字段，Cursor 也忽略 CC 特有字段。一份 SKILL.md 同时服务两个工具。
 
 ---
 

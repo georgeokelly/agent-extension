@@ -1,14 +1,22 @@
 ---
+# Frontmatter fields follow the agentskills.io specification (https://agentskills.io/specification).
+# Cross-tool: Cursor, Claude Code, and Codex all parse name + description.
+# Codex constraints (as of rust-v0.118.0): name ≤64 chars kebab-case, description ≤1024 chars.
+# CC-specific fields (when_to_use, etc.) are ignored by Cursor/Codex; Codex-unknown fields are ignored by CC.
 name: drawio
 description: >-
   Generate draw.io diagrams as native .drawio files with optional PNG/SVG/PDF export
   and inline canvas preview in Cursor. Use when asked to create diagrams, flowcharts,
   architecture diagrams, ER diagrams, sequence diagrams, network diagrams, or any
   visual diagram using draw.io.
+when_to_use: >-
+  Use when the user asks to create diagrams, flowcharts, architecture diagrams,
+  ER diagrams, sequence diagrams, network diagrams, or any visual diagram.
+argument-hint: "[format] diagram description"
 compatibility: Cross-tool (Cursor, Claude Code, Codex). Requires filesystem access. Canvas preview requires Cursor with browser tools.
 metadata:
   author: georgel
-  version: "1.0"
+  version: "1.1"
   upstream: https://github.com/jgraph/drawio-mcp
 license: Apache-2.0
 ---
@@ -113,9 +121,9 @@ Set `adaptiveColors="auto"` on `<mxGraphModel>`. Colors behave as:
 
 Consult `references/xml-reference.md` for complete style properties, edge routing details, and container examples.
 
-## Cursor canvas preview
+## [Cursor-only] Canvas preview
 
-**Applies only in Cursor** when canvas/browser tools are available. Claude Code and Codex skip this section.
+> **Skip this section if you are not running in Cursor.** This feature requires Cursor's browser/canvas tools. Claude Code and Codex skip this step.
 
 After writing the `.drawio` file, create an inline preview:
 

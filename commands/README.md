@@ -8,9 +8,15 @@ A **Command** is a Markdown file that defines a Cursor slash-command (`/command-
 
 ## How to Use / 如何使用
 
-Commands are deployed to `.cursor/commands/<name>.md` by `agent-sync`. Once deployed, invoke them directly in the Cursor chat input:
+Commands are deployed by `agent-sync` to both Cursor and Claude Code:
+- Cursor: `.cursor/commands/<name>.md`
+- Claude Code: `.claude/commands/<name>.md` (CC legacy — CC recommends `.claude/skills/` for new content)
 
-Command 由 `agent-sync` 部署至 `.cursor/commands/<name>.md`。部署完成后，在 Cursor 对话框中直接输入斜杠命令触发：
+Command 由 `agent-sync` 同时部署至 Cursor 和 Claude Code：
+- Cursor: `.cursor/commands/<name>.md`
+- Claude Code: `.claude/commands/<name>.md`（CC legacy — CC 推荐新内容使用 `.claude/skills/`）
+
+Once deployed, invoke them directly in the chat input / 部署完成后，直接输入斜杠命令触发：
 
 ```
 /pre-commit
