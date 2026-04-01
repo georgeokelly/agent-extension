@@ -1,0 +1,158 @@
+<!-- Uses draw.io viewer library from diagrams.net (https://www.drawio.com). -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PASTE_TITLE_HERE</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { color-scheme: light dark; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 12px;
+    }
+    #diagram-container { min-width: 200px; display: none; }
+    #diagram-container .mxgraph { width: 100%; max-width: 100%; }
+    #loading {
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px; font-size: 14px; color: #888;
+    }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid #e0e0e0; border-top-color: #333;
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #toolbar {
+      display: flex; gap: 6px; padding: 10px 0 2px;
+    }
+    #toolbar a, #toolbar button {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 5px 12px; font-size: 12px; font-family: inherit;
+      border: 1px solid #ccc; border-radius: 6px;
+      background: transparent; cursor: pointer;
+      text-decoration: none; color: inherit;
+      transition: background 0.15s;
+    }
+    #toolbar a:hover, #toolbar button:hover { background: rgba(128,128,128,0.1); }
+    #error {
+      display: none; padding: 12px; margin: 12px 0;
+      border: 1px solid #e74c3c; border-radius: 6px;
+      background: #fdf0ef; color: #c0392b; font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading"><div class="spinner"></div>Loading diagram…</div>
+  <div id="error"></div>
+  <div id="diagram-container"></div>
+  <div id="toolbar" style="display:none;">
+    <a id="edit-link" href="javascript:void(0)" target="_blank" rel="noopener noreferrer" style="display:none;">Open in draw.io</a>
+    <button id="copy-btn">Copy XML</button>
+  </div>
+
+  <!-- Agent: paste the generated draw.io XML here verbatim. No escaping needed. -->
+  <script type="text/xml" id="diagram-data">PASTE_DIAGRAM_XML_HERE</script>
+
+  <script src="https://viewer.diagrams.net/js/viewer-static.min.js" async></script>
+  <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako_deflate.min.js" async></script>
+
+  <script>
+    var diagramXml = document.getElementById('diagram-data').textContent;
+
+    function showError(msg) {
+      document.getElementById('loading').style.display = 'none';
+      var el = document.getElementById('error');
+      el.style.display = 'block';
+      el.textContent = msg;
+    }
+
+    function waitFor(check, timeout) {
+      return new Promise(function(resolve, reject) {
+        if (check()) { resolve(); return; }
+        var t0 = Date.now();
+        var iv = setInterval(function() {
+          if (check()) { clearInterval(iv); resolve(); }
+          else if (Date.now() - t0 > timeout) { clearInterval(iv); reject(); }
+        }, 100);
+      });
+    }
+
+    function generateEditUrl(xml) {
+      if (typeof pako === 'undefined') return null;
+      var encoded = encodeURIComponent(xml);
+      var compressed = pako.deflateRaw(encoded);
+      var b64 = btoa(Array.from(compressed, function(b) {
+        return String.fromCharCode(b);
+      }).join(''));
+      var obj = { type: 'xml', compressed: true, data: b64 };
+      return 'https://app.diagrams.net/?pv=0&grid=0#create=' +
+        encodeURIComponent(JSON.stringify(obj));
+    }
+
+    async function render() {
+      try {
+        await waitFor(function() { return typeof GraphViewer !== 'undefined'; }, 10000);
+      } catch (e) {
+        showError('Failed to load draw.io viewer. Check network connection.');
+        return;
+      }
+
+      var container = document.getElementById('diagram-container');
+      var div = document.createElement('div');
+      div.className = 'mxgraph';
+      div.setAttribute('data-mxgraph', JSON.stringify({
+        highlight: '#0000ff',
+        'dark-mode': 'auto',
+        nav: true,
+        resize: true,
+        toolbar: 'zoom layers tags',
+        xml: diagramXml
+      }));
+      container.appendChild(div);
+
+      document.getElementById('loading').style.display = 'none';
+      container.style.display = 'block';
+      document.getElementById('toolbar').style.display = 'flex';
+
+      GraphViewer.darkBackgroundColor = getComputedStyle(document.body).backgroundColor;
+      GraphViewer.processElements();
+
+      try {
+        await waitFor(function() { return typeof pako !== 'undefined'; }, 5000);
+        var url = generateEditUrl(diagramXml);
+        if (url) {
+          var link = document.getElementById('edit-link');
+          link.href = url;
+          link.style.display = '';
+        }
+      } catch (e) { /* pako unavailable — edit link stays hidden */ }
+    }
+
+    document.getElementById('copy-btn').addEventListener('click', function() {
+      var btn = this;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(diagramXml).then(function() {
+          btn.textContent = 'Copied!';
+          setTimeout(function() { btn.textContent = 'Copy XML'; }, 2000);
+        });
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = diagramXml;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        btn.textContent = 'Copied!';
+        setTimeout(function() { btn.textContent = 'Copy XML'; }, 2000);
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>

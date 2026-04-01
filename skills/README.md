@@ -35,4 +35,4 @@ See [Naming Conventions](../README.md#naming-conventions--命名约定) in the r
 
 | Name / 名称 | Description / 描述 | Source / 来源 | License |
 |---|---|---|---|
-| _(none yet)_ | | | |
+| `drawio` | Generate draw.io diagrams (.drawio) with optional PNG/SVG/PDF export and Cursor canvas preview / 生成 draw.io 图表，支持导出和 Cursor 内联预览 | [drawio-mcp](https://github.com/jgraph/drawio-mcp) | Apache-2.0 |
