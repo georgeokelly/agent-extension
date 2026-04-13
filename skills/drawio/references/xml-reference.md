@@ -2,7 +2,13 @@
 
 > Adapted from [drawio-mcp](https://github.com/jgraph/drawio-mcp) by JGraph Ltd (Apache-2.0). Copyright 2025 JGraph Ltd. Modified by georgel.
 
-Detailed reference for styles, edge routing, and containers. Consult this when generating complex diagrams.
+Detailed reference for styles, edge routing, containers, layers, tags, metadata, and dark mode. Consult this when generating draw.io XML diagrams.
+
+## General principles
+
+- **Use proper draw.io shapes and connectors** — choose the semantically correct shape for each element (e.g., `shape=cylinder3` for databases and tanks, `rhombus` for decisions, `shape=mxgraph.pid2valves.*` for valves in P&IDs). draw.io has extensive shape libraries; prefer domain-appropriate shapes over generic rectangles.
+- **Decide whether to search for shapes** — before generating a diagram, decide if it needs domain-specific shapes from draw.io's extended libraries. **Skip shape search** for standard diagram types that use basic geometric shapes: flowcharts, UML (class, sequence, state, activity), ERD, org charts, mind maps, Venn diagrams, timelines, wireframes, and any diagram using only rectangles, diamonds, circles, cylinders, and arrows. Also skip if the user explicitly asks to use basic/simple shapes. **Search for shapes** when the diagram requires industry-specific or branded icons: cloud architecture (AWS, Azure, GCP), network topology (Cisco, rack equipment), P&ID (valves, instruments, vessels), electrical/circuit diagrams, Kubernetes, BPMN with specific task types, or any domain where the user expects realistic/standardized symbols rather than labeled boxes.
+- **Match the language of labels to the user's language** — if the user writes in German, French, Japanese, etc., all diagram labels, titles, and annotations should be in that same language.
 
 ## Common styles
 
@@ -153,6 +159,94 @@ Set `parent="containerId"` on child cells. Children use **relative coordinates**
 </mxCell>
 ```
 
+## Layers
+
+Layers control visibility and z-order. Every cell belongs to exactly one layer. Use layers to manage diagram complexity — viewers can toggle layer visibility to show or hide groups of elements (e.g., "Physical Infrastructure" vs "Logical Network" vs "Security Zones").
+
+Cell `id="0"` is the root and cell `id="1"` is the default layer — both always exist. Additional layers are `mxCell` elements with `parent="0"`:
+
+```xml
+<mxGraphModel>
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="2" value="Annotations" parent="0"/>
+    <mxCell id="10" value="Server" style="rounded=1;" vertex="1" parent="1">
+      <mxGeometry x="100" y="100" width="120" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="20" value="Note: deprecated" style="text;" vertex="1" parent="2">
+      <mxGeometry x="100" y="170" width="120" height="30" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>
+```
+
+- A layer is an `mxCell` with `parent="0"` and no `vertex` or `edge` attribute
+- Assign shapes to a layer by setting `parent` to the layer's id
+- Later layers render on top of earlier layers (higher z-order)
+- Add `visible="0"` as an attribute on the layer cell to hide it by default
+- Use layers when the diagram has distinct conceptual groupings that viewers may want to toggle independently
+
+## Tags
+
+Tags are visual filters that let viewers show or hide elements by category. Unlike layers, a single element can have multiple tags, making tags ideal for cross-cutting concerns (e.g., tagging shapes as "critical", "v2", or "backend").
+
+Tags require wrapping `mxCell` in an `<object>` element. Tags are assigned via the `tags` attribute as a space-separated string:
+
+```xml
+<mxGraphModel>
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <object id="2" label="Auth Service" tags="critical v2">
+      <mxCell style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxGeometry x="100" y="100" width="120" height="60" as="geometry"/>
+      </mxCell>
+    </object>
+    <object id="3" label="Legacy API" tags="critical deprecated">
+      <mxCell style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxGeometry x="300" y="100" width="120" height="60" as="geometry"/>
+      </mxCell>
+    </object>
+  </root>
+</mxGraphModel>
+```
+
+- Tags require the `<object>` wrapper — a plain `mxCell` cannot have tags
+- The `label` attribute on `<object>` replaces `value` on `mxCell`
+- Tags are space-separated in the `tags` attribute
+- Viewers filter the diagram by selecting tags in the draw.io UI (Edit > Tags)
+- Tags do not affect z-order or structural grouping — they are purely a visibility filter
+
+## Metadata and placeholders
+
+Metadata stores custom key-value properties on shapes as additional attributes on the `<object>` wrapper element. Combined with placeholders, metadata values can be displayed in labels — useful for data-driven diagrams showing status, owner, IP addresses, or versions on each shape.
+
+Set `placeholders="1"` on the `<object>` to enable `%propertyName%` substitution in the `label`:
+
+```xml
+<mxGraphModel>
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <object id="2" label="&lt;b&gt;%component%&lt;/b&gt;&lt;br&gt;Owner: %owner%&lt;br&gt;Status: %status%"
+            placeholders="1" component="Auth Service" owner="Team Backend" status="Active">
+      <mxCell style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxGeometry x="100" y="100" width="160" height="80" as="geometry"/>
+      </mxCell>
+    </object>
+  </root>
+</mxGraphModel>
+```
+
+- Custom properties are plain XML attributes on `<object>` (e.g., `component="Auth Service"`)
+- Set `placeholders="1"` to enable `%key%` substitution in the label and tooltip
+- The label must use `html=1` style when using HTML formatting with placeholders
+- Placeholders resolve by walking up the containment hierarchy: shape → parent container → layer → root (first match wins)
+- Predefined placeholders (work without custom properties): `%id%`, `%width%`, `%height%`, `%date%`, `%time%`, `%timestamp%`, `%page%`, `%pagenumber%`, `%pagecount%`, `%filename%`
+- Use `%%` for a literal percent sign in labels
+- Tags, metadata, and placeholders can all be combined on the same `<object>` element
+
 ## Color palettes
 
 Common draw.io color combinations (fill / stroke):
@@ -166,6 +260,18 @@ Common draw.io color combinations (fill / stroke):
 | Purple | `#e1d5e7` | `#9673a6` | External, third-party |
 | Grey | `#f5f5f5` | `#666666` | Disabled, background |
 | Yellow | `#fff2cc` | `#d6b656` | Highlight, notes |
+
+## Dark mode colors
+
+draw.io supports automatic dark mode rendering. How colors behave depends on the property:
+
+- **`strokeColor`, `fillColor`, `fontColor`** default to `"default"`, which renders as black in light theme and white in dark theme. When no explicit color is set, colors adapt automatically.
+- **Explicit colors** (e.g. `fillColor=#DAE8FC`) specify the light-mode color. The dark-mode color is computed automatically by inverting the RGB values (blending toward the inverse at 93%) and rotating the hue by 180° (via `mxUtils.getInverseColor`).
+- **`light-dark()` function** — to specify both colors explicitly, use `light-dark(lightColor,darkColor)` in the style string, e.g. `fontColor=light-dark(#7EA6E0,#FF0000)`. The first argument is used in light mode, the second in dark mode.
+
+To enable dark mode color adaptation, the `mxGraphModel` element must include `adaptiveColors="auto"`.
+
+When generating diagrams, you generally do not need to specify dark-mode colors — the automatic inversion handles most cases. Use `light-dark()` only when the automatic inverse color is unsatisfactory.
 
 ## Multi-page diagrams
 
@@ -193,3 +299,15 @@ Use `<diagram>` elements inside `<mxfile>` for multiple pages:
 ```
 
 For single-page diagrams, the bare `<mxGraphModel>` format (without `<mxfile>` wrapper) is preferred for simplicity.
+
+## Style reference
+
+- Complete draw.io style reference: https://github.com/jgraph/drawio-mcp/blob/main/shared/style-reference.md
+- XML Schema Definition (XSD): https://github.com/jgraph/drawio-mcp/blob/main/shared/mxfile.xsd
+
+## CRITICAL: XML well-formedness
+
+When generating draw.io XML, the output **must** be well-formed XML:
+- **NEVER include ANY XML comments (`<!-- ... -->`) in the output.** XML comments are strictly forbidden — they waste tokens, can cause parse errors, and serve no purpose in diagram XML.
+- Escape special characters in attribute values: `&amp;`, `&lt;`, `&gt;`, `&quot;`
+- Always use unique `id` values for each `mxCell`

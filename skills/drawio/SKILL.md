@@ -16,7 +16,7 @@ argument-hint: "[format] diagram description"
 compatibility: Cross-tool (Cursor, Claude Code, Codex). Requires filesystem access. Canvas preview requires Cursor with browser tools.
 metadata:
   author: georgel
-  version: "1.1"
+  version: "1.2"
   upstream: https://github.com/jgraph/drawio-mcp
 license: Apache-2.0
 ---
@@ -115,9 +115,9 @@ Set `adaptiveColors="auto"` on `<mxGraphModel>`. Colors behave as:
 
 ### XML well-formedness
 
-- **NEVER** use `--` inside XML comments (illegal per XML spec)
-- Escape special characters: `&amp;`, `&lt;`, `&gt;`, `&quot;`
-- Use unique `id` values for each `mxCell`
+- **NEVER include ANY XML comments (`<!-- ... -->`) in the output.** XML comments are strictly forbidden — they waste tokens, can cause parse errors, and serve no purpose in diagram XML.
+- Escape special characters in attribute values: `&amp;`, `&lt;`, `&gt;`, `&quot;`
+- Always use unique `id` values for each `mxCell`
 
 Consult `references/xml-reference.md` for complete style properties, edge routing details, and container examples.
 
@@ -139,30 +139,96 @@ The canvas provides interactive zoom, pan, layer toggle, dark mode support, and 
 
 ### Locating the CLI
 
-Detect the environment, then locate the CLI:
+First, detect the environment, then locate the CLI:
 
 | Environment | Detection | CLI path |
 |-------------|-----------|----------|
-| **WSL2** | `/proc/version` contains `microsoft` or `WSL` | `` `/mnt/c/Program Files/draw.io/draw.io.exe` `` |
 | **macOS** | `uname -s` = `Darwin` | `/Applications/draw.io.app/Contents/MacOS/draw.io` |
-| **Linux** | Default | `drawio` (on PATH via snap/apt/flatpak) |
+| **Linux (desktop)** | X11/Wayland available | `drawio` (on PATH via snap/apt/flatpak) |
+| **Linux (headless)** | No display (remote server) | `gl-drawio` — Docker-based headless exporter (see below) |
+| **WSL2** | `/proc/version` contains `microsoft` or `WSL` | `` `/mnt/c/Program Files/draw.io/draw.io.exe` `` |
 | **Windows** | Native | `"C:\Program Files\draw.io\draw.io.exe"` |
 
-Use `which drawio` to check PATH first; fall back to platform-specific path.
+Use `which drawio` (or `where drawio` on Windows) to check PATH first; fall back to platform-specific path.
+
+#### WSL2 details
+
+Detect WSL2:
+
+```bash
+grep -qi microsoft /proc/version 2>/dev/null && echo "WSL2"
+```
+
+If draw.io is installed in a non-default location, check per-user install:
+
+```bash
+# Default install path
+`/mnt/c/Program Files/draw.io/draw.io.exe`
+# Per-user install (if the above does not exist)
+`/mnt/c/Users/$WIN_USER/AppData/Local/Programs/draw.io/draw.io.exe`
+```
+
+The backtick quoting handles the space in `Program Files` in bash.
+
+#### Linux headless: `gl-drawio`
+
+On headless Linux servers (no X11/Wayland), the native `drawio` CLI cannot run. Use `gl-drawio` instead — it runs drawio inside a Docker container with xvfb:
+
+```bash
+gl-drawio [options] <input.drawio> [input2.drawio ...]
+```
+
+Key flags:
+- `-f`, `--format` — output format: `svg` (default), `png`, `pdf`, `jpg`
+- `-s`, `--scale` — scale factor (e.g. `1.5`, `2`)
+- `-p`, `--page` — page index (0-based); default: all pages
+- `-t`, `--transparent` — transparent background
+- `-o`, `--outdir` — output directory (default: same dir as input)
+- `--crop` — crop to diagram bounds (PDF only)
+
+Output naming: `<stem>-<PageName>.<format>` (or `<stem>.<format>` for single-page files).
+
+Requires Docker daemon access. The underlying image is `rlespinasse/drawio-export:latest`.
 
 ### Export command
+
+#### macOS / Linux desktop / Windows / WSL2
 
 ```bash
 drawio -x -f <format> -e -b 10 -o <output> <input.drawio>
 ```
 
 Key flags:
-- `-x` — export mode
-- `-f` — format: `png`, `svg`, `pdf`, `jpg`
-- `-e` — embed diagram XML in output (PNG, SVG, PDF only)
-- `-o` — output file path
-- `-b 10` — border width (recommended: 10)
+- `-x` / `--export` — export mode
+- `-f` / `--format` — format: `png`, `svg`, `pdf`, `jpg`
+- `-e` / `--embed-diagram` — embed diagram XML in output (PNG, SVG, PDF only)
+- `-o` / `--output` — output file path
+- `-b` / `--border` — border width around diagram (recommended: 10)
 - `-p <index>` — page index (0-based) for multi-page diagrams; omit for single-page
+- `-t` / `--transparent` — transparent background (PNG only)
+- `-s` / `--scale` — scale the diagram size (e.g. `2` for 2x)
+- `--width` / `--height` — fit into specified dimensions (preserves aspect ratio)
+- `-a` / `--all-pages` — export all pages (PDF only)
+
+**WSL2 example:**
+
+```bash
+`/mnt/c/Program Files/draw.io/draw.io.exe` -x -f png -e -b 10 -o diagram.drawio.png diagram.drawio
+```
+
+#### Linux headless (remote server)
+
+```bash
+gl-drawio -f <format> <input.drawio>
+```
+
+`gl-drawio` does not support `--embed-diagram` — the `.drawio` source file should be kept alongside the export. Typical usage:
+
+```bash
+gl-drawio -f png -s 2 architecture.drawio
+gl-drawio -f svg -o ./images/ *.drawio
+gl-drawio -f pdf -p 0 multi-page.drawio
+```
 
 ### Supported formats
 
@@ -173,9 +239,11 @@ Key flags:
 | `pdf`  | Yes (`-e`) | Printable, editable in draw.io |
 | `jpg`  | No | Lossy, no embedded XML support |
 
-After successful export with `-e`, delete the intermediate `.drawio` file — the exported file contains the full editable diagram.
+After successful export with `-e` (native drawio CLI), delete the intermediate `.drawio` file — the exported file contains the full editable diagram.
 
-If draw.io CLI is not found: keep the `.drawio` file and inform the user they can install the draw.io desktop app to enable export, or open the `.drawio` file directly.
+When using `gl-drawio` (headless), keep the `.drawio` file alongside the export since `gl-drawio` does not embed XML.
+
+If no export CLI is found: keep the `.drawio` file and inform the user they can install the draw.io desktop app or Docker (for `gl-drawio`) to enable export, or open the `.drawio` file directly.
 
 ## File naming
 
@@ -188,9 +256,13 @@ If draw.io CLI is not found: keep the `.drawio` file and inform the user they ca
 | Environment | Command |
 |-------------|---------|
 | macOS | `open <file>` |
-| Linux (native) | `xdg-open <file>` |
+| Linux (desktop) | `xdg-open <file>` |
 | WSL2 | `cmd.exe /c start "" "$(wslpath -w <file>)"` |
 | Remote / no display | Print file path for user to download |
+
+**WSL2 notes:**
+- `wslpath -w <path>` converts a WSL2 path (e.g. `/home/user/diagram.drawio`) to a Windows path (e.g. `C:\Users\...`). Required because `cmd.exe` cannot resolve `/mnt/c/...` style paths.
+- The empty string `""` after `start` prevents `start` from interpreting the filename as a window title.
 
 ## Style reference
 
@@ -203,6 +275,6 @@ If draw.io CLI is not found: keep the `.drawio` file and inform the user they ca
 |---------|-------|----------|
 | Blank diagram | Missing root cells `id="0"` and `id="1"` | Ensure basic mxGraphModel structure is complete |
 | Edges not rendering | Edge mxCell is self-closing (no child mxGeometry) | Every edge must have `<mxGeometry relative="1" as="geometry" />` |
-| Export produces empty file | Invalid XML (`--` in comments, unescaped chars) | Fix XML well-formedness |
-| draw.io CLI not found | Desktop app not installed | Keep `.drawio` file, inform user |
+| Export produces empty file | Invalid XML (comments, unescaped chars) | Remove all XML comments; fix well-formedness |
+| draw.io CLI not found | Desktop app not installed | On headless Linux try `gl-drawio`; otherwise keep `.drawio` file, inform user |
 | Canvas preview blank | GraphViewer CDN failed to load | Fall back to `.drawio` file only |

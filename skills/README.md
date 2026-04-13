@@ -62,3 +62,4 @@ Note: CC ignores unknown frontmatter fields, Cursor ignores CC-specific fields. 
 | Name / 名称 | Description / 描述 | Source / 来源 | License |
 |---|---|---|---|
 | `drawio` | Generate draw.io diagrams (.drawio) with optional PNG/SVG/PDF export and Cursor canvas preview / 生成 draw.io 图表，支持导出和 Cursor 内联预览 | [drawio-mcp](https://github.com/jgraph/drawio-mcp) | Apache-2.0 |
+| `convert-md2html` | Convert Markdown files to HTML using marked.js, pandoc, gomarkdown, Jekyll, or Hugo / 将 Markdown 文件转换为 HTML，支持多种工具和模板系统 | [awesome-copilot](https://github.com/github/awesome-copilot/tree/main/skills/markdown-to-html) | MIT |
