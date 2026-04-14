@@ -9,33 +9,35 @@ Detailed reference for styles, edge routing, containers, layers, tags, metadata,
 - **Use proper draw.io shapes and connectors** — choose the semantically correct shape for each element (e.g., `shape=cylinder3` for databases and tanks, `rhombus` for decisions, `shape=mxgraph.pid2valves.*` for valves in P&IDs). draw.io has extensive shape libraries; prefer domain-appropriate shapes over generic rectangles.
 - **Decide whether to search for shapes** — before generating a diagram, decide if it needs domain-specific shapes from draw.io's extended libraries. **Skip shape search** for standard diagram types that use basic geometric shapes: flowcharts, UML (class, sequence, state, activity), ERD, org charts, mind maps, Venn diagrams, timelines, wireframes, and any diagram using only rectangles, diamonds, circles, cylinders, and arrows. Also skip if the user explicitly asks to use basic/simple shapes. **Search for shapes** when the diagram requires industry-specific or branded icons: cloud architecture (AWS, Azure, GCP), network topology (Cisco, rack equipment), P&ID (valves, instruments, vessels), electrical/circuit diagrams, Kubernetes, BPMN with specific task types, or any domain where the user expects realistic/standardized symbols rather than labeled boxes.
 - **Match the language of labels to the user's language** — if the user writes in German, French, Japanese, etc., all diagram labels, titles, and annotations should be in that same language.
+- **Always include `html=1` in every `mxCell` style string.** This ensures labels render HTML tags (`<br>`, `<b>`, `<i>`) correctly. Plain text is unaffected by the flag.
+- **Use `<br>` for multi-line labels** (requires `html=1`). Do NOT use `&#xa;` — it causes JSON parse errors when the XML is embedded in HTML `data-mxgraph` attributes, because the browser decodes `&#xa;` into a literal newline before JSON.parse sees it.
 
 ## Common styles
 
 **Rounded rectangle:**
 ```xml
-<mxCell id="2" value="Label" style="rounded=1;whiteSpace=wrap;" vertex="1" parent="1">
+<mxCell id="2" value="Label" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
   <mxGeometry x="100" y="100" width="120" height="60" as="geometry"/>
 </mxCell>
 ```
 
 **Diamond (decision):**
 ```xml
-<mxCell id="3" value="Condition?" style="rhombus;whiteSpace=wrap;" vertex="1" parent="1">
+<mxCell id="3" value="Condition?" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="1">
   <mxGeometry x="100" y="200" width="120" height="80" as="geometry"/>
 </mxCell>
 ```
 
 **Arrow (edge):**
 ```xml
-<mxCell id="4" value="" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="2" target="3" parent="1">
+<mxCell id="4" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="2" target="3" parent="1">
   <mxGeometry relative="1" as="geometry"/>
 </mxCell>
 ```
 
 **Labeled arrow:**
 ```xml
-<mxCell id="5" value="Yes" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="3" target="6" parent="1">
+<mxCell id="5" value="Yes" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" source="3" target="6" parent="1">
   <mxGeometry relative="1" as="geometry"/>
 </mxCell>
 ```
@@ -44,6 +46,7 @@ Detailed reference for styles, edge routing, containers, layers, tags, metadata,
 
 | Property | Values | Use for |
 |----------|--------|---------|
+| `html=1` | 0 or 1 | Enable HTML rendering in labels — MUST be set on every cell |
 | `rounded=1` | 0 or 1 | Rounded corners |
 | `whiteSpace=wrap` | wrap | Text wrapping |
 | `fillColor=#dae8fc` | Hex color | Background color |
@@ -78,16 +81,16 @@ Detailed reference for styles, edge routing, containers, layers, tags, metadata,
 </mxCell>
 ```
 
-draw.io does **not** have built-in collision detection for edges. Plan layout and routing carefully:
+**CRITICAL: The draw.io auto-router has NO obstacle avoidance.** Edges are routed using simple orthogonal paths between source and target, ignoring all intermediate nodes. If any non-source/non-target vertex lies in the path, the edge WILL cross through it. You MUST mentally verify every edge path after generating XML.
 
 - Use `edgeStyle=orthogonalEdgeStyle` for right-angle connectors (most common)
 - **Space nodes generously** — at least 60px apart, prefer 200px horizontal / 120px vertical gaps
 - Use `exitX`/`exitY` and `entryX`/`entryY` (values 0–1) to control which side of a node an edge connects to. Spread connections across different sides to prevent overlap
-- **Leave room for arrowheads**: The final straight segment must be long enough to fit the arrowhead (default size 6, configurable via `startSize`/`endSize`). If the final segment is too short, the arrowhead overlaps the bend. Ensure at least 20px of straight segment before the target and after the source
-- When using `orthogonalEdgeStyle`, the auto-router places bends automatically — if source and target are close or nearly aligned, the router may place a bend too close to a shape. Fix by increasing node spacing or adding explicit waypoints
-- Add explicit **waypoints** when edges would overlap:
+- **Leave room for arrowheads**: ensure at least 20px of straight segment before the target and after the source
+- The auto-router places bends automatically — if source and target are close or nearly aligned, a bend may be placed too close to a shape. Fix by increasing node spacing or adding explicit waypoints
+- Add explicit **waypoints** when edges would overlap or cross through intermediate nodes:
   ```xml
-  <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="a" target="b">
+  <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="a" target="b">
     <mxGeometry relative="1" as="geometry">
       <Array as="points">
         <mxPoint x="300" y="150"/>
@@ -111,6 +114,52 @@ draw.io does **not** have built-in collision detection for edges. Plan layout an
 | `exitX=0;exitY=0` | Top-left corner | Diagonal connections |
 
 Same pattern for `entryX`/`entryY` on the target side.
+
+### Direction consistency
+
+All edges MUST flow in a consistent primary direction (typically top-to-bottom). Never place a flow target above its source node in a top-down diagram.
+
+- For every edge, verify `target.y >= source.y` (top-down) or `target.x >= source.x` (left-to-right)
+- Decision branches go **right/down** or **left/down**, never upward
+- If a decision has "skip" and "compute" outcomes, the skip path goes to the side or below, not above the diamond
+
+### Fan-out / fan-in ports
+
+When a node has 2+ outgoing or incoming edges on the same side, you MUST spread connection ports to prevent overlap:
+
+| Edge count | Port positions |
+|-----------|---------------|
+| 2 edges | `0.25` and `0.75` |
+| 3 edges | `0.25`, `0.5`, `0.75` |
+| 4+ edges | Evenly distributed from `0.1` to `0.9` |
+
+Apply `exitX`/`exitY` for fan-out and `entryX`/`entryY` for fan-in. Common patterns:
+
+- **Fork** (1 node → 2 targets below): `exitX=0.25;exitY=1` and `exitX=0.75;exitY=1`
+- **Join** (2 sources → 1 target below): `entryX=0.25;entryY=0` and `entryX=0.75;entryY=0`
+- **Side fan-out** (from right side to 2 targets): `exitX=1;exitY=0.3` and `exitX=1;exitY=0.7`
+
+### Cross-container edge routing
+
+Cross-container edges (source and target in different containers, or one at root level) ALWAYS require explicit routing — the auto-router cannot navigate around intermediate containers:
+
+1. **Specify exit/entry ports** (`exitX`, `exitY`, `entryX`, `entryY`) to control which side of each node the edge connects to
+2. **Add explicit waypoints** to route along the canvas perimeter, bypassing all intermediate containers
+3. Waypoint coordinates are **absolute** (canvas coordinates), even when source/target use relative coordinates within their parent
+
+Standard bypass pattern: exit right → waypoint at `(canvas_right + 30, source_y)` → waypoint at `(canvas_right + 30, target_y)` → enter target from right. Mirror for left-side bypass.
+
+```xml
+<mxCell id="e1" edge="1" parent="1" source="nodeInSwimA" target="nodeInSwimC"
+    style="edgeStyle=orthogonalEdgeStyle;html=1;rounded=1;exitX=1;exitY=0.5;entryX=1;entryY=0.5;">
+  <mxGeometry relative="1" as="geometry">
+    <Array as="points">
+      <mxPoint x="790" y="230"/>
+      <mxPoint x="790" y="480"/>
+    </Array>
+  </mxGeometry>
+</mxCell>
+```
 
 ## Containers and groups
 
@@ -137,13 +186,13 @@ Set `parent="containerId"` on child cells. Children use **relative coordinates**
 ### Example: Architecture container with swimlane
 
 ```xml
-<mxCell id="svc1" value="User Service" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+<mxCell id="svc1" value="User Service" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;html=1;" vertex="1" parent="1">
   <mxGeometry x="100" y="100" width="300" height="200" as="geometry"/>
 </mxCell>
-<mxCell id="api1" value="REST API" style="rounded=1;whiteSpace=wrap;" vertex="1" parent="svc1">
+<mxCell id="api1" value="REST API" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="svc1">
   <mxGeometry x="20" y="40" width="120" height="60" as="geometry"/>
 </mxCell>
-<mxCell id="db1" value="Database" style="shape=cylinder3;whiteSpace=wrap;" vertex="1" parent="svc1">
+<mxCell id="db1" value="Database" style="shape=cylinder3;whiteSpace=wrap;html=1;" vertex="1" parent="svc1">
   <mxGeometry x="160" y="40" width="120" height="60" as="geometry"/>
 </mxCell>
 ```
@@ -151,10 +200,10 @@ Set `parent="containerId"` on child cells. Children use **relative coordinates**
 ### Example: Invisible group container
 
 ```xml
-<mxCell id="grp1" value="" style="group;" vertex="1" parent="1">
+<mxCell id="grp1" value="" style="group;html=1;" vertex="1" parent="1">
   <mxGeometry x="100" y="100" width="300" height="200" as="geometry"/>
 </mxCell>
-<mxCell id="c1" value="Component A" style="rounded=1;whiteSpace=wrap;" vertex="1" parent="grp1">
+<mxCell id="c1" value="Component A" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="grp1">
   <mxGeometry x="10" y="10" width="120" height="60" as="geometry"/>
 </mxCell>
 ```
@@ -299,6 +348,104 @@ Use `<diagram>` elements inside `<mxfile>` for multiple pages:
 ```
 
 For single-page diagrams, the bare `<mxGraphModel>` format (without `<mxfile>` wrapper) is preferred for simplicity.
+
+## HTML embedding reference
+
+When embedding draw.io diagrams in HTML pages, the GraphViewer library renders `<div>` elements with a `data-mxgraph` attribute containing a JSON configuration object.
+
+### Viewer script
+
+```html
+<script src="https://viewer.diagrams.net/js/viewer-static.min.js" async></script>
+```
+
+After the script loads, call `GraphViewer.processElements()` to render all `data-mxgraph` divs on the page. For dynamic DOM insertion (SPAs), call this manually after adding the div.
+
+Set `GraphViewer.darkBackgroundColor = getComputedStyle(document.body).backgroundColor` before `processElements()` to enable automatic dark mode detection.
+
+### `data-mxgraph` configuration options
+
+Source: [drawio.com/doc/faq/embed-html-options](https://www.drawio.com/doc/faq/embed-html-options)
+
+#### Data source
+
+| Key | Values | Default | Description |
+|-----|--------|---------|-------------|
+| `xml` | XML string | — | Inline diagram XML. Use this for agent-generated diagrams |
+| `url` | URL string | — | Public URL to load diagram from. **Takes precedence over `xml`** — do not set both |
+
+#### Display
+
+| Key | Values | Default | Description |
+|-----|--------|---------|-------------|
+| `zoom` | number | `1` | Initial zoom level |
+| `border` | number | `8` | Padding around diagram in pixels |
+| `center` | boolean | `false` | Center diagram in container |
+| `max-height` | number | — | Maximum initial height of diagram container |
+| `auto-fit` | boolean | `true` | Auto-zoom to fit container. Set `false` to preserve 1:1 scale |
+| `allow-zoom-in` | boolean | `false` | Allow zoom level > 1 |
+| `resize` | boolean | — | Container resizes after changes (layer toggle, page switch) |
+| `check-visible-state` | boolean | `true` | Delayed rendering for hidden containers. Set `false` for tabs/accordions |
+
+#### Toolbar
+
+| Key | Values | Default | Description |
+|-----|--------|---------|-------------|
+| `toolbar` | space-separated tokens | — | Toolbar buttons: `pages`, `zoom`, `layers`, `lightbox`, `custom` |
+| `toolbar-nohide` | boolean | `false` | Always show toolbar (default: show on hover) |
+| `toolbar-position` | `top` / `inline` / `bottom` | `top` | Toolbar placement |
+| `toolbar-buttons` | object | — | Custom button definitions: `{key: {title, image, handler}}` |
+| `title` | string | — | Toolbar title or tooltip if no toolbar visible |
+
+#### Interaction
+
+| Key | Values | Default | Description |
+|-----|--------|---------|-------------|
+| `nav` | boolean | `true` | Enable collapse/expand navigation |
+| `lightbox` | `false` / `open` | — | Disable lightbox or force open in new window |
+| `editable` | boolean | `true` | Allow editing from lightbox. Set `false` for read-only embeds |
+| `edit` | URL / `_blank` | — | Custom edit link in lightbox. `_blank` opens a copy in draw.io |
+| `target` | `self` / `blank` | auto | Link target behavior |
+| `highlight` | hex color | — | Border highlight color for shapes with links |
+| `tooltips` | boolean | `true` | Show tooltips on hover |
+
+#### Multi-page
+
+| Key | Values | Default | Description |
+|-----|--------|---------|-------------|
+| `page` | number | `0` | Initial page index (0-based) |
+
+Include `pages` in `toolbar` to show the page switcher. Source XML must use the `<mxfile><diagram>...</diagram></mxfile>` wrapper.
+
+#### Dark mode
+
+| Key | Values | Default | Description |
+|-----|--------|---------|-------------|
+| `dark-mode` | `auto` / `dark` / `light` | — | Diagram appearance. `auto` follows system theme |
+
+Complement with CSS `html { color-scheme: light dark; }` for page chrome adaptation.
+
+#### Layers
+
+| Key | Values | Default | Description |
+|-----|--------|---------|-------------|
+| `layers` | space-separated indices | all visible | Initially visible layers (e.g. `0 1 3`) |
+| `auto-crop` | boolean | `false` | Auto-crop diagram when toggling layers |
+
+### Recommended XML delivery pattern
+
+Always store XML in a `<script type="text/xml">` sidecar element and build the `data-mxgraph` attribute at runtime via `JSON.stringify`. This avoids the double-encoding trap (XML → JSON → HTML attribute) that causes silent rendering failures:
+
+```html
+<script type="text/xml" id="diagram-data">
+  <!-- paste raw XML here — no escaping needed -->
+</script>
+<script>
+  var xml = document.getElementById('diagram-data').textContent;
+  div.setAttribute('data-mxgraph', JSON.stringify({ xml: xml, ... }));
+  GraphViewer.processElements();
+</script>
+```
 
 ## Style reference
 

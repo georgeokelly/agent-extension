@@ -16,7 +16,7 @@ argument-hint: "[format] diagram description"
 compatibility: Cross-tool (Cursor, Claude Code, Codex). Requires filesystem access. Canvas preview requires Cursor with browser tools.
 metadata:
   author: georgel
-  version: "1.2"
+  version: "1.4"
   upstream: https://github.com/jgraph/drawio-mcp
 license: Apache-2.0
 ---
@@ -86,13 +86,38 @@ Every diagram must have this structure:
 
 ### Layout rules
 
+- **`html=1` required**: Always include `html=1` in every `mxCell` style string. This ensures labels render HTML tags (`<br>`, `<b>`, `<i>`) correctly; plain text is unaffected
+- **Line breaks**: Use `<br>` (with `html=1`) for multi-line labels — NOT `&#xa;`. `&#xa;` causes JSON parse errors when XML is embedded in HTML `data-mxgraph` attributes
 - **Grid**: align all nodes to multiples of 10
 - **Spacing**: ≥200px horizontal, ≥120px vertical between nodes
 - **Edge style**: use `edgeStyle=orthogonalEdgeStyle` for right-angle connectors
 - **Connection ports**: use `exitX`/`exitY`/`entryX`/`entryY` (0–1) to control which side of a node an edge connects to; spread connections across different sides
 - **Arrowhead clearance**: ensure ≥20px straight segment before target/after source for arrowheads
-- **Waypoints**: add explicit waypoints (`<Array as="points"><mxPoint x="..." y="..."/></Array>` inside mxGeometry) when edges would overlap
+- **Waypoints**: add explicit waypoints (`<Array as="points"><mxPoint x="..." y="..."/></Array>` inside mxGeometry) when edges would overlap or cross through nodes
 - **Edge labels**: do NOT wrap in HTML markup — default edge font is already 11px (smaller than vertex 12px). Just set the `value` attribute directly
+
+#### Edge routing fundamentals
+
+**The draw.io auto-router has NO obstacle avoidance.** Edges are routed using simple orthogonal paths between source and target, ignoring all intermediate nodes. If any non-source/non-target vertex lies in the path, the edge WILL cross through it.
+
+- **MUST manually verify every edge path** after generating XML. For each edge, mentally trace the orthogonal route and check if any intermediate node would be crossed — add waypoints to route around it
+- **Direction consistency**: All edges MUST flow in a consistent primary direction (typically top-to-bottom). Never place a flow target above its source. For every edge, verify `target.y >= source.y` (top-down) or `target.x >= source.x` (left-to-right). Decision branches go right/down or left/down, never upward
+
+#### Fan-out / fan-in ports
+
+When a node has 2+ outgoing or incoming edges, MUST spread connection ports to prevent overlap:
+
+| Edge count | Port positions |
+|-----------|---------------|
+| 2 edges | `0.25` and `0.75` |
+| 3 edges | `0.25`, `0.5`, `0.75` |
+| 4+ edges | Evenly distributed from `0.1` to `0.9` |
+
+Common patterns: Fork (1→2 below) uses `exitX=0.25;exitY=1` and `exitX=0.75;exitY=1`. Join (2→1 below) uses `entryX=0.25;entryY=0` and `entryX=0.75;entryY=0`.
+
+#### No orphan elements
+
+Every visible element MUST have at least one edge connecting it to the diagram flow. Floating annotations should use a dashed edge (`dashed=1;endArrow=open;endFill=0`).
 
 ### Containers
 
@@ -105,6 +130,16 @@ Use parent-child containment (`parent="containerId"`) for nested elements. Child
 | **Custom container** | Add `container=1;pointerEvents=0;` to any shape | Shape acting as container without own connections |
 
 Always add `pointerEvents=0;` on containers that should not capture child connections.
+
+#### Cross-container edge routing
+
+Cross-container edges (source and target in different containers) ALWAYS require explicit routing — the auto-router cannot navigate around intermediate containers:
+
+1. **Specify exit/entry ports** (`exitX`, `exitY`, `entryX`, `entryY`) to control which side of each node the edge connects to
+2. **Add explicit waypoints** to route along the canvas perimeter, bypassing all intermediate containers
+3. Waypoint coordinates are **absolute** (canvas coordinates), even when source/target use relative coordinates within their parent
+
+Standard bypass pattern: exit right → waypoint at `(canvas_right + 30, source_y)` → waypoint at `(canvas_right + 30, target_y)` → enter target from right. Mirror for left-side bypass.
 
 ### Dark mode
 
@@ -119,15 +154,133 @@ Set `adaptiveColors="auto"` on `<mxGraphModel>`. Colors behave as:
 - Escape special characters in attribute values: `&amp;`, `&lt;`, `&gt;`, `&quot;`
 - Always use unique `id` values for each `mxCell`
 
+### Post-generation verification
+
+Verify before outputting XML:
+
+1. **`html=1`** present in every `mxCell` style
+2. **`<br>`** used for line breaks (not `&#xa;`)
+3. **No backward edges**: For every edge, `target.y >= source.y` (top-down) or `target.x >= source.x` (left-to-right)
+4. **No edge-through-vertex**: Trace every edge's orthogonal path — no intermediate node crossed; add waypoints if needed
+5. **Fan-out/fan-in ports**: Any node with 2+ edges on the same side has spread `exitX`/`entryX` values
+6. **No orphan elements**: Every visible node has at least one connecting edge
+7. **Cross-container edges**: All edges between different containers have explicit exit/entry ports and waypoints
+
 Consult `references/xml-reference.md` for complete style properties, edge routing details, and container examples.
+
+## HTML embedding
+
+Embed generated diagrams in HTML pages for interactive display (zoom, pan, layers, dark mode) without installing draw.io. This works in any modern browser.
+
+### Embedding modes
+
+| Mode | Mechanism | Interactivity | Use case |
+|------|-----------|---------------|----------|
+| **HTML viewer** (this section) | `data-mxgraph` + GraphViewer CDN | Zoom, pan, layers, lightbox | Documentation, dashboards, reports |
+| **IFrame** | `<iframe src="https://viewer.diagrams.net/...">` | Same as viewer | Quick embed, strict CSP environments |
+| **Embedded editor** | `embed=1` + postMessage protocol | Full editing | Collaborative apps |
+| **Static image** | SVG/PNG export | None | Email, PDF, universal compatibility |
+
+This section covers the **HTML viewer** approach — the recommended default for interactive embedding.
+
+### Quick start
+
+Use `references/embed-template.html` as the base template. Populate it by replacing:
+- `PASTE_DIAGRAM_XML_HERE` with the generated draw.io XML (paste verbatim — no escaping needed inside `<script type="text/xml">`)
+- `PASTE_TITLE_HERE` with a descriptive title
+
+The template automatically:
+- Loads the viewer from the diagrams.net CDN with async loading and timeout fallback
+- Detects multi-page diagrams and adds the page switcher toolbar
+- Supports dark mode via `color-scheme` and `dark-mode: auto`
+- Scales responsively to container width
+
+### Recommended `data-mxgraph` defaults
+
+The template constructs the `data-mxgraph` JSON at runtime via `JSON.stringify` (avoiding the double-encoding trap of hand-writing JSON inside an HTML attribute). Recommended baseline:
+
+| Key | Default | Rationale |
+|-----|---------|-----------|
+| `xml` | *(required)* | Always inline — never use `url` for agent-generated diagrams (avoids CORS and network dependency) |
+| `toolbar` | `"zoom layers lightbox"` | Core interactive controls; add `pages` for multi-page diagrams |
+| `nav` | `true` | Collapse/expand for complex diagrams |
+| `center` | `true` | Better visual presentation |
+| `editable` | `false` | Read-only by default — prevents unexpected editor popups |
+| `border` | `8` | Padding around diagram |
+| `highlight` | `"#0000ff"` | Visual feedback for linked shapes |
+| `dark-mode` | `"auto"` | Respects system theme preference |
+
+### Optional configuration
+
+See `references/xml-reference.md` for the complete `data-mxgraph` options reference. Common optional settings:
+
+| Option | When to use |
+|--------|-------------|
+| `page=N` | Set initial page for multi-page diagrams (0-based) |
+| `layers=[0 1 ...]` | Show only specific layers on load |
+| `max-height=600` | Constrain height in documentation/blog layouts |
+| `allow-zoom-in=true` | Permit zoom beyond 100% for fine-detail diagrams |
+| `toolbar-nohide=true` | Always show toolbar (default: show on hover) |
+| `toolbar-position=bottom` | Move toolbar below diagram |
+| `lightbox=open` | Click opens full-screen lightbox |
+| `auto-crop=true` | Auto-crop when toggling layers |
+
+### Dark mode
+
+Dark mode involves two independent layers:
+
+1. **Diagram layer**: `adaptiveColors="auto"` on `<mxGraphModel>` — draw.io auto-inverts colors. No extra work needed if the XML generation rules are followed
+2. **Page chrome layer**: CSS `html { color-scheme: light dark; }` adapts browser UI. The viewer reads `dark-mode: auto` and calls `GraphViewer.darkBackgroundColor` to detect the page background
+
+Both layers are handled automatically by the template.
+
+### Responsive sizing and pan
+
+The template uses `width: 100%; max-width: 100%` on the `.mxgraph` container with `max-height: 80vh` and `overflow: auto`. Key rules:
+
+- **`max-height`** constrains the container so zoom-in produces scrollable overflow instead of expanding the page
+- **Drag-to-pan**: the template includes a mousedown/mousemove handler — grab and drag to scroll the zoomed diagram (`cursor: grab` → `grabbing`)
+- **Do NOT use `resize: true`** — it makes the container grow with zoom, preventing pan entirely
+- **`<meta name="viewport">`** is included in the template for mobile responsiveness
+
+### CDN and offline
+
+The viewer is loaded from `https://viewer.diagrams.net/js/viewer-static.min.js` (~200KB). The template handles failure gracefully:
+
+- **Timeout**: 8-second async load with fallback message if CDN is unreachable
+- **`onerror`**: immediate fallback on script load failure
+- **Fallback content**: message with link to open draw.io and instructions to paste XML or open the `.drawio` file directly
+
+For environments with strict Content Security Policy, add to CSP headers:
+
+```
+script-src 'self' https://viewer.diagrams.net;
+```
+
+For fully offline/air-gapped environments, the viewer JS can be self-hosted — download `viewer-static.min.js` and serve it locally.
+
+### Multi-page diagrams
+
+The template auto-detects multi-page diagrams (multiple `<diagram>` elements inside `<mxfile>`) and adds the `pages` toolbar button automatically. Use `page=N` (0-based) in the config to set the initial page.
+
+### Gotchas
+
+| Gotcha | Detail |
+|--------|--------|
+| `url` overrides `xml` | If both are set, `url` takes precedence — the inline XML is silently ignored |
+| `tags` not officially documented | Not in the official `toolbar` token list; use only if diagram has tags and you have verified it works |
+| `pako` is optional | Only needed for "Open in draw.io" URL generation; not required for viewer rendering |
+| Large XML in attributes | Browsers may truncate HTML attributes >64KB; always use the `<script type="text/xml">` sidecar pattern instead |
+| SPA integration | After dynamic DOM insertion, call `GraphViewer.processElements()` manually |
+| Hidden containers | Diagrams in tabs/accordions need `check-visible-state=false` or re-render on show |
 
 ## [Cursor-only] Canvas preview
 
-> **Skip this section if you are not running in Cursor.** This feature requires Cursor's browser/canvas tools. Claude Code and Codex skip this step.
+> This section extends the [HTML embedding](#html-embedding) approach with Cursor-specific canvas integration. **Skip if not running in Cursor.** Claude Code and Codex skip this step.
 
 After writing the `.drawio` file, create an inline preview:
 
-1. Read `references/canvas-template.html` for the HTML structure
+1. Read `references/canvas-template.html` for the HTML structure (this is a Cursor-enhanced variant of `embed-template.html` with "Copy XML" and "Open in draw.io" buttons)
 2. Construct the HTML:
    - Replace the content of `<script type="text/xml" id="diagram-data">PASTE_DIAGRAM_XML_HERE</script>` with the generated XML (paste verbatim — no escaping needed since `<script type="text/xml">` treats content as raw text; the only sequence that would break it is a literal `</script>` tag, which never appears in draw.io XML)
    - Replace `PASTE_TITLE_HERE` with a descriptive diagram title
