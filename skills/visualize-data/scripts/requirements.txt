@@ -1,0 +1,15 @@
+# Core (required)
+pandas>=2.0
+matplotlib>=3.9
+numpy
+
+# Recommended
+seaborn>=0.13
+plotly>=5.0
+
+# Optional
+plotext>=5.0
+openpyxl
+sqlalchemy
+pyarrow
+squarify

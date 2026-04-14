@@ -1,0 +1,16 @@
+product,region,status
+Widget A,North,active
+Widget B,South,active
+Widget A,East,inactive
+Widget C,North,active
+Widget B,West,active
+Widget A,South,inactive
+Widget C,East,active
+Widget B,North,active
+Widget A,West,active
+Widget C,South,inactive
+Widget B,East,active
+Widget A,North,active
+Widget C,West,inactive
+Widget B,South,active
+Widget A,East,active
