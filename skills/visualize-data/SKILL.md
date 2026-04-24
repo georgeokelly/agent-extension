@@ -1,4 +1,5 @@
 ---
+# Spec (required)
 name: visualize-data
 description: >-
   Analyzes data and generates visualizations (charts, plots, dashboards) using Python.
@@ -8,9 +9,43 @@ description: >-
   draw graphs, create dashboards, analyze distributions, trends, comparisons, EDA,
   or when the user mentions 可视化, 画图, 图表, 探索性分析, histogram, heatmap,
   scatter, plot, chart, dashboard.
+
+# Spec (optional)
+license: MIT
+compatibility: >-
+  Python 3.9+. Requires pandas + matplotlib; optional: seaborn (statistical charts),
+  plotly (interactive HTML), plotext (terminal ASCII), openpyxl (Excel),
+  pyarrow (Parquet), sqlalchemy (SQL).
 metadata:
   author: georgel
   version: "0.1"
+
+# Spec (experimental)
+# allowed-tools: Bash(git add *) Bash(git commit *) Read  # support claude only
+# disable-model-invocation: true                          # support cursor + claude
+
+# Spec (claude-only)
+# when_to_use (derived from description/body; kept as comment per project decision — inactive):
+# when_to_use: >-
+#   Use when the user explicitly asks to visualize data, plot a chart, create a
+#   dashboard, or analyze distributions / trends / comparisons / correlations with
+#   a specific dataset. Do NOT use to generate decorative charts without data, or
+#   to answer conceptual questions about visualization theory — this skill produces
+#   concrete chart artifacts from user data.
+# argument-hint: "[issue-number] [branch]"
+# arguments: [issue, branch]
+# user-invocable: true
+# model: sonnet        # sonnet / opus / haiku / id / inherit
+# effort: medium       # low / medium / high / xhigh / max
+# context: fork        # When forking, run the body in an independent subagent context
+# agent: general-purpose
+# hooks:
+#   PreToolUse: ./hooks/<pre.sh>
+#   PostToolUse: ./hooks/<post.sh>
+#   Stop: ./hooks/<stop.sh>
+# paths:
+#   - "src/**/*.ts"
+# shell: bash          # bash / powershell
 ---
 
 # Data Visualization

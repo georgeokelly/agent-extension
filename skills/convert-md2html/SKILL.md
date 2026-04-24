@@ -1,8 +1,5 @@
 ---
-# Frontmatter fields follow the agentskills.io specification (https://agentskills.io/specification).
-# Cross-tool: Cursor, Claude Code, and Codex all parse name + description.
-# Codex constraints (as of rust-v0.118.0): name ≤64 chars kebab-case, description ≤1024 chars.
-# CC-specific fields (when_to_use, etc.) are ignored by Cursor/Codex; Codex-unknown fields are ignored by CC.
+# Spec (required)
 name: convert-md2html
 description: >-
   Convert Markdown files to HTML using marked.js, pandoc, gomarkdown/markdown,
@@ -11,18 +8,39 @@ description: >-
   "render markdown", "generate html from markdown", or when working with
   .md files that need HTML output. Supports CLI and Node.js workflows
   with GFM, CommonMark, and standard Markdown flavors.
+
+# Spec (optional)
+license: MIT
+compatibility: Cross-tool (Cursor, Claude Code, Codex). Requires filesystem access.
+metadata:
+  author: georgel
+  version: "1.0"
+  upstream: https://github.com/github/awesome-copilot/tree/main/skills/markdown-to-html
+
+# Spec (experimental)
+# allowed-tools: Bash(git add *) Bash(git commit *) Read  # support claude only
+# disable-model-invocation: true                          # support cursor + claude
+
+# Spec (claude-only)
 when_to_use: >-
   Use when the user asks to convert markdown to HTML, transform md files,
   render markdown as HTML output, generate HTML documentation from .md files,
   build static sites from Markdown content, or work on template systems
   that convert markdown to HTML.
 argument-hint: "[tool] markdown file or content"
-compatibility: Cross-tool (Cursor, Claude Code, Codex). Requires filesystem access.
-metadata:
-  author: georgel
-  version: "1.0"
-  upstream: https://github.com/github/awesome-copilot/tree/main/skills/markdown-to-html
-license: MIT
+# arguments: [issue, branch]
+# user-invocable: true
+# model: sonnet        # sonnet / opus / haiku / id / inherit
+# effort: medium       # low / medium / high / xhigh / max
+# context: fork        # When forking, run the body in an independent subagent context
+# agent: general-purpose
+# hooks:
+#   PreToolUse: ./hooks/<pre.sh>
+#   PostToolUse: ./hooks/<post.sh>
+#   Stop: ./hooks/<stop.sh>
+# paths:
+#   - "src/**/*.ts"
+# shell: bash          # bash / powershell
 ---
 
 # Markdown to HTML Conversion

@@ -1,24 +1,42 @@
 ---
-# Frontmatter fields follow the agentskills.io specification (https://agentskills.io/specification).
-# Cross-tool: Cursor, Claude Code, and Codex all parse name + description.
-# Codex constraints (as of rust-v0.118.0): name ≤64 chars kebab-case, description ≤1024 chars.
-# CC-specific fields (when_to_use, etc.) are ignored by Cursor/Codex; Codex-unknown fields are ignored by CC.
+# Spec (required)
 name: drawio
 description: >-
   Generate draw.io diagrams as native .drawio files with optional PNG/SVG/PDF export
   and inline canvas preview in Cursor. Use when asked to create diagrams, flowcharts,
   architecture diagrams, ER diagrams, sequence diagrams, network diagrams, or any
   visual diagram using draw.io.
-when_to_use: >-
-  Use when the user asks to create diagrams, flowcharts, architecture diagrams,
-  ER diagrams, sequence diagrams, network diagrams, or any visual diagram.
-argument-hint: "[format] diagram description"
+
+# Spec (optional)
+license: Apache-2.0
 compatibility: Cross-tool (Cursor, Claude Code, Codex). Requires filesystem access. Canvas preview requires Cursor with browser tools.
 metadata:
   author: georgel
   version: "1.4"
   upstream: https://github.com/jgraph/drawio-mcp
-license: Apache-2.0
+
+# Spec (experimental)
+# allowed-tools: Bash(git add *) Bash(git commit *) Read  # support claude only
+# disable-model-invocation: true                          # support cursor + claude
+
+# Spec (claude-only)
+when_to_use: >-
+  Use when the user asks to create diagrams, flowcharts, architecture diagrams,
+  ER diagrams, sequence diagrams, network diagrams, or any visual diagram.
+argument-hint: "[format] diagram description"
+# arguments: [issue, branch]
+# user-invocable: true
+# model: sonnet        # sonnet / opus / haiku / id / inherit
+# effort: medium       # low / medium / high / xhigh / max
+# context: fork        # When forking, run the body in an independent subagent context
+# agent: general-purpose
+# hooks:
+#   PreToolUse: ./hooks/<pre.sh>
+#   PostToolUse: ./hooks/<post.sh>
+#   Stop: ./hooks/<stop.sh>
+# paths:
+#   - "src/**/*.ts"
+# shell: bash          # bash / powershell
 ---
 
 # Draw.io Diagram Skill

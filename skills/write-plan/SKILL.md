@@ -1,21 +1,42 @@
 ---
-# Frontmatter fields follow the agentskills.io specification (https://agentskills.io/specification).
-# Cross-tool: Cursor, Claude Code, and Codex all parse `name` + `description`.
-# Extra fields such as `when_to_use` are additive guidance and degrade safely on tools that ignore them.
+# Spec (required)
 name: write-executable-plan
 description: >-
   Generate implementation plans as executable contracts with contract profiles,
   dependency graph, checkpoints, verification, decision points, and a runtime
   stage-claims ledger. Use when the user wants an actionable plan another agent
   can follow directly.
-when_to_use: >-
-  Use when the user asks for an actionable implementation plan, execution contract,
-  explicit tasks, checkpoints, verification, decision points, or a reusable plan
-  artifact another agent can execute.
+
+# Spec (optional)
+license: MIT
 compatibility: Cross-tool (Cursor, Claude Code, Codex). Requires filesystem access for reading repository context. The validator `scripts/validate-plan.py` is mandatory (run it at Step 10 of the composer workflow); all it needs is Python 3 available locally.
 metadata:
   author: georgel
   version: "0.1"
+
+# Spec (experimental)
+# allowed-tools: Bash(git add *) Bash(git commit *) Read  # support claude only
+# disable-model-invocation: true                          # support cursor + claude
+
+# Spec (claude-only)
+when_to_use: >-
+  Use when the user asks for an actionable implementation plan, execution contract,
+  explicit tasks, checkpoints, verification, decision points, or a reusable plan
+  artifact another agent can execute.
+# argument-hint: "[issue-number] [branch]"
+# arguments: [issue, branch]
+# user-invocable: true
+# model: sonnet        # sonnet / opus / haiku / id / inherit
+# effort: medium       # low / medium / high / xhigh / max
+# context: fork        # When forking, run the body in an independent subagent context
+# agent: general-purpose
+# hooks:
+#   PreToolUse: ./hooks/<pre.sh>
+#   PostToolUse: ./hooks/<post.sh>
+#   Stop: ./hooks/<stop.sh>
+# paths:
+#   - "src/**/*.ts"
+# shell: bash          # bash / powershell
 ---
 
 # Write Executable Plan
