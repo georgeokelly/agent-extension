@@ -1,0 +1,141 @@
+schema_version: 1
+purpose: >
+  Recommended model and reasoning/effort defaults for delegated local agent CLI
+  calls. Treat this as a policy/config file, not proof that a model is available
+  on every account.
+
+versions:
+  codex_cli: "0.125.0"
+  cursor_agent: "2026.04.17-787b533"
+  claude_code: "2.1.112"
+  opencode_cli: "1.14.21"
+
+policy:
+  prefer_user_request: true
+  if_model_unavailable: "Use the next CLI-specific candidate when configured; otherwise omit the model override and use the CLI/account default."
+  if_effort_unavailable: "Omit the effort override and use the CLI/account default."
+  use_overrides_when:
+    - "the user explicitly asks for a model or reasoning level"
+    - "the parent needs reproducibility across child-agent runs"
+    - "the task is high-risk enough to justify a stronger model/effort"
+
+local_overrides:
+  codex_model_prepend: ""
+  codex_model_prepend_behavior: "If non-empty, prepend this exact model id to the Codex candidate list at runtime, de-duplicating while preserving order. Keep empty in the shared config; use deployed/local copies for private or test model ids."
+  opencode_command: ""
+  opencode_provider: ""
+  opencode_model_prepend: ""
+  opencode_override_behavior: "If opencode_command is non-empty in a deployed/local copy, use it instead of the public opencode command. If opencode_model_prepend is non-empty, prepend it to opencode model candidates. If opencode_provider is non-empty and the model value has no slash, pass --model as <provider>/<model>. Keep provider/model empty in the shared config; use deployed/local copies for private providers or model ids."
+
+task_profiles:
+  default: "ordinary delegated coding or review"
+  deep: "large refactors, ambiguous bugs, architecture, or high-risk reviews"
+  review: "independent review where false negatives matter"
+  sandbox_autonomy: "child agent has broad autonomy inside an external sandbox"
+
+clis:
+  codex:
+    verified_version: "0.125.0"
+    model:
+      flag: "--model <model>"
+      short_flag: "-m <model>"
+      availability_check: "codex --help does not list account models; verify by running a small command or fall back to config default."
+      candidates: ["gpt-5.5"]
+      candidate_policy: "Use only public or account-generally-exposed model ids in this shared skill. If local_overrides.codex_model_prepend is non-empty in a deployed/local copy, prepend it to this list at runtime; do not commit private/test model ids to the shared config."
+    effort:
+      name: "reasoning"
+      flag: "-c model_reasoning_effort=\"<level>\""
+      values: ["low", "medium", "high", "xhigh"]
+    recommendations:
+      default:
+        model_candidates: ["gpt-5.5"]
+        effort: "high"
+      deep:
+        model_candidates: ["gpt-5.5"]
+        effort: "xhigh"
+      review:
+        model_candidates: ["gpt-5.5"]
+        effort: "high"
+      sandbox_autonomy:
+        model_candidates: ["gpt-5.5"]
+        effort: "high"
+    command_fragment: "--model <chosen_model> -c model_reasoning_effort=\"<effort>\""
+
+  cursor_agent:
+    verified_version: "2026.04.17-787b533"
+    model:
+      flag: "--model <model>"
+      availability_check: "cursor-agent --list-models"
+      candidates:
+        - "grok-4-20-thinking"
+        - "composer-2"
+        - "claude-opus-4-7-thinking-max"
+        - "gemini-3.1-pro"
+      default: "grok-4-20-thinking"
+      backup_for_missing_claude_code: "claude-opus-4-7-thinking-max"
+    effort:
+      name: "reasoning"
+      flag: null
+      encoding: "No standalone effort/reasoning flag in the verified Cursor Agent CLI; reasoning level is part of selected model id when present."
+    recommendations:
+      default:
+        model: "grok-4-20-thinking"
+        effort: "thinking"
+      deep:
+        model: "grok-4-20-thinking"
+        effort: "thinking"
+      review:
+        model: "grok-4-20-thinking"
+        effort: "thinking"
+      sandbox_autonomy:
+        model: "grok-4-20-thinking"
+        effort: "thinking"
+    command_fragment: "--model <model>"
+
+  claude_code:
+    verified_version: "2.1.112"
+    model:
+      flag: "--model <model>"
+      aliases_from_help: ["sonnet", "opus"]
+      availability_check: "claude --help only shows aliases/examples; account availability is auth-dependent."
+    effort:
+      name: "effort"
+      flag: "--effort <level>"
+      values_from_verified_help: ["low", "medium", "high", "xhigh", "max"]
+      recommended_values: ["xhigh", "max"]
+    recommendations:
+      default:
+        model: "opus"
+        effort: "xhigh"
+      deep:
+        model: "opus"
+        effort: "max"
+      review:
+        model: "opus"
+        effort: "max"
+      sandbox_autonomy:
+        model: "opus"
+        effort: "max"
+    command_fragment: "--model <model> --effort <effort>"
+
+  opencode:
+    verified_version: "1.14.21"
+    verified_version_applies_to: "public opencode command only"
+    local_override_version_policy: "If local_overrides.opencode_command is non-empty, verify that command's --version and run --help independently; do not compare it to verified_version."
+    command:
+      candidates: ["opencode"]
+      local_override_key: "local_overrides.opencode_command"
+    model:
+      flag: "--model <provider/model>"
+      candidates: []
+      local_prepend_key: "local_overrides.opencode_model_prepend"
+      provider_override_key: "local_overrides.opencode_provider"
+      candidate_policy: "Shared config intentionally does not publish provider or model ids. Use opencode's local default model, or fill local_overrides in deployed/private copies."
+      availability_check: "opencode models [provider]"
+    effort:
+      name: "variant"
+      flag: "--variant <variant>"
+      values: []
+      note: "Provider-specific reasoning effort; keep empty in shared config unless a public provider/model policy is added."
+    recommendations: {}
+    command_fragment: "<opencode_command> run --dir <workspace> --format json [--model <provider/model>] [--variant <variant>] <prompt>"
