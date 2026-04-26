@@ -7,8 +7,8 @@ description: >-
   Includes data profiling, chart type recommendation, and multi-source data loading
   (CSV, Excel, Parquet, JSON, SQL, DataFrame). Use when asked to visualize data, plot charts,
   draw graphs, create dashboards, analyze distributions, trends, comparisons, EDA,
-  or when the user mentions 可视化, 画图, 图表, 探索性分析, histogram, heatmap,
-  scatter, plot, chart, dashboard.
+  or when the user mentions visualization, plotting, charts, exploratory data
+  analysis, histogram, heatmap, scatter, plot, chart, or dashboard.
 
 # Spec (optional)
 license: MIT
@@ -105,21 +105,21 @@ and suggest `pip install pandas matplotlib seaborn`.
 ### Few-Shot Examples: User Question → Intent
 
 ```
-"帮我看看各阶段的时间占比"           → part-of-whole
-"哪个阶段最慢？"                     → comparison
-"性能有没有随 step 变化的趋势？"      → trend
-"FA4 比 SDPA 快多少？"               → comparison
-"这些指标之间有没有相关性？"          → relationship
-"数据的分布是什么样的？有没有异常值？" → distribution
-"用户从哪个页面跳转到哪个页面？"      → flow
-"按地区展示销售额"                    → spatial
-"这些特征在不同模型之间怎么对比？"     → multi-dimensional
+"Show me the time share for each stage"         → part-of-whole
+"Which stage is the slowest?"                   → comparison
+"Does performance trend with step changes?"     → trend
+"How much faster is FA4 than SDPA?"             → comparison
+"Are these metrics correlated?"                 → relationship
+"What is the data distribution? Any outliers?"  → distribution
+"Which pages do users navigate from and to?"    → flow
+"Show sales by region"                          → spatial
+"Compare these features across models"          → multi-dimensional
 ```
 
 ### What if intent is ambiguous?
 
 The same data can answer different questions. If unsure:
-1. Ask the user: "你想看的是各部分占比，还是不同组之间的对比？"
+1. Ask the user: "Do you want to see the part-to-whole breakdown or compare groups?"
 2. Or pass both intents and present options from both: `--intent comparison` first, then `--intent part-of-whole`, let the user compare the two sets of recommendations.
 
 ### What if the user doesn't ask a question?

@@ -156,7 +156,7 @@ Always:
 - Place **explicit checkpoint nodes** (`ck*`) at the structural landmarks identified in Step 8 — joins, pre-irreversible steps, decision forks — if any exist.
 - Write **verification criteria** as concrete pass/fail conditions per stage and checkpoint (what defines success), not as restatements of the stage purpose.
 - Distinguish **`Proposed Deliverables`** from **`Committed Deliverables`** when artifact shape is not yet frozen.
-- When a piece of information is genuinely unknown at plan-writing time, mark the gap inline with `TODO` or `TBD`. Do not invent alternative wording (e.g. "待定", "to decide", "?") — stick to `TODO` / `TBD` so the validator's warning detector picks them up.
+- When a piece of information is genuinely unknown at plan-writing time, mark the gap inline with `TODO` or `TBD`. Do not invent alternative wording (e.g. "pending", "to decide", "?") — stick to `TODO` / `TBD` so the validator's warning detector picks them up.
 
 Never:
 
