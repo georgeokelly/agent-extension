@@ -883,6 +883,42 @@ class ValidatePlanTests(unittest.TestCase):
             f"Expected pre-filled-marker issue, got: {issues}",
         )
 
+    def test_stage_claims_completed_markers_allowed_in_runtime_mode(self) -> None:
+        plan = valid_feature_plan().replace(
+            "- [ ] s1: Add cache behavior\n- [ ] h: Handoff",
+            "- [x] s1: Add cache behavior — agent-a @ 04150900\n"
+            "- [x] h: Handoff — agent-a @ 04150905",
+        )
+        issues, warnings = VALIDATOR.validate(plan, claims_mode="runtime")
+        self.assertEqual(issues, [])
+        self.assertEqual(warnings, [])
+
+    def test_stage_claims_in_progress_markers_allowed_in_runtime_mode(self) -> None:
+        plan = valid_feature_plan().replace(
+            "- [ ] s1: Add cache behavior\n- [ ] h: Handoff",
+            "- [x] s1: Add cache behavior — agent-a @ 04150900\n"
+            "- [~] h: Handoff — agent-a @ 04150905",
+        )
+        issues, warnings = VALIDATOR.validate(plan, claims_mode="runtime")
+        self.assertEqual(issues, [])
+        self.assertEqual(warnings, [])
+
+    def test_stage_claims_runtime_mode_still_checks_id_alignment(self) -> None:
+        plan = valid_feature_plan().replace(
+            "- [ ] s1: Add cache behavior\n- [ ] h: Handoff",
+            "- [x] s2: Wrong claim — agent-a @ 04150900\n"
+            "- [x] h: Handoff — agent-a @ 04150905",
+        )
+        issues, _warnings = VALIDATOR.validate(plan, claims_mode="runtime")
+        self.assertTrue(
+            any("DAG nodes without a matching `## Stage Claims` entry" in i for i in issues),
+            f"Expected missing-claim issue, got: {issues}",
+        )
+        self.assertTrue(
+            any("Stage Claims` entries with ids not in `## Dependency Graph`" in i for i in issues),
+            f"Expected extra-claim issue, got: {issues}",
+        )
+
     def test_stage_claims_last_entry_must_be_h(self) -> None:
         # Isolate the "last entry must be `h`" check by *swapping*
         # the order of the existing ledger entries rather than

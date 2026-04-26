@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="220" viewBox="0 0 420 220" role="img" aria-labelledby="title desc">
+  <title id="title">Sample line chart</title>
+  <desc id="desc">A simple upward trend line on a chart grid.</desc>
+  <rect width="420" height="220" fill="#ffffff"/>
+  <path d="M60 30 V180 H380" fill="none" stroke="#333333" stroke-width="2"/>
+  <path d="M75 160 L140 132 L205 142 L270 92 L345 58" fill="none" stroke="#1f5f9f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="75" cy="160" r="5" fill="#1f5f9f"/>
+  <circle cx="140" cy="132" r="5" fill="#1f5f9f"/>
+  <circle cx="205" cy="142" r="5" fill="#1f5f9f"/>
+  <circle cx="270" cy="92" r="5" fill="#1f5f9f"/>
+  <circle cx="345" cy="58" r="5" fill="#1f5f9f"/>
+  <text x="60" y="202" fill="#555555" font-family="Arial, sans-serif" font-size="14">sample metric over time</text>
+</svg>

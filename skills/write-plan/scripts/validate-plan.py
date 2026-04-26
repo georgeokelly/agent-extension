@@ -8,13 +8,14 @@ See `reference.md` for the plan contract this validator enforces. At a glance:
 - Node Content Templates: each `### <id>: <label>` block's shape is dispatched
   by the node id prefix — `s*` stage, `ck*` checkpoint, `h` handoff.
 - Id alignment across `## Dependency Graph`, `## Stages`, and `## Stage Claims`.
-- Stage Claims ledger: three-state markers, unclaimed at composer time, last
-  entry references the `h` handoff.
+- Stage Claims ledger: three-state markers, unclaimed at composer time by
+  default; runtime mode allows `[~]` / `[x]` markers.
 - Plan filename.
 """
 
 from __future__ import annotations
 
+import argparse
 import re
 import sys
 from pathlib import Path
@@ -69,6 +70,11 @@ ALLOWED_CONTRACT_PROFILES = {
 ALLOWED_MODES = {
     "credit-rich",
     "budget-limited",
+}
+
+ALLOWED_CLAIMS_MODES = {
+    "composer",
+    "runtime",
 }
 
 # Checkpoint-shape `**Mode:**` enum.
@@ -458,7 +464,11 @@ def _detect_unclosed_fence(text: str) -> tuple[str, int] | None:
     return None
 
 
-def validate(text: str, path: Path | None = None) -> tuple[list[str], list[str]]:
+def validate(
+    text: str,
+    path: Path | None = None,
+    claims_mode: str = "composer",
+) -> tuple[list[str], list[str]]:
     # Normalize line endings before any regex / line-scan logic runs.
     # Plans authored on Windows editors (CRLF) or copy-pasted from
     # mixed-EOL sources otherwise leave a stray `\r` at end-of-line,
@@ -471,6 +481,14 @@ def validate(text: str, path: Path | None = None) -> tuple[list[str], list[str]]
 
     issues: list[str] = []
     warnings: list[str] = []
+
+    if claims_mode not in ALLOWED_CLAIMS_MODES:
+        issues.append(
+            f"Unknown Stage Claims validation mode `{claims_mode}`. "
+            f"Expected one of: {sorted(ALLOWED_CLAIMS_MODES)}. "
+            f"Use `composer` for initial plans or `runtime` for executed ledgers."
+        )
+        claims_mode = "composer"
 
     # Detect unclosed fence BEFORE running the rest of the checks so the
     # warning appears alongside (and is easier to correlate with) the
@@ -578,7 +596,7 @@ def validate(text: str, path: Path | None = None) -> tuple[list[str], list[str]]
     dag_issues, dag_nodes = validate_dependency_graph(text)
     issues.extend(dag_issues)
 
-    claim_issues, claim_ids = validate_stage_claims(text)
+    claim_issues, claim_ids = validate_stage_claims(text, claims_mode=claims_mode)
     issues.extend(claim_issues)
 
     # Id alignment is only meaningful if all three inputs exist and parsed to
@@ -1625,13 +1643,17 @@ def extract_stage_claims_entries(
     return entries
 
 
-def validate_stage_claims(text: str) -> tuple[list[str], set[str] | None]:
+def validate_stage_claims(
+    text: str,
+    claims_mode: str = "composer",
+) -> tuple[list[str], set[str] | None]:
     """Verify the `## Stage Claims` ledger is seeded correctly.
 
     Rules enforced:
     - ledger is non-empty,
     - every entry is shaped `- [ ] <id>: <label>`,
-    - composer seeds only `[ ]` (runtime markers `[~]` / `[x]` are rejected),
+    - composer mode seeds only `[ ]`,
+    - runtime mode also accepts `[~]` / `[x]` markers,
     - the last ledger entry references `h`,
     - entry ids are unique (duplicates would break runtime coordination).
 
@@ -1664,25 +1686,30 @@ def validate_stage_claims(text: str) -> tuple[list[str], set[str] | None]:
         )
         issues.append(
             f"`## Stage Claims` has malformed entries: {samples}. "
-            f"Expected `- [ ] <id>: <label>` where `<id>` matches `s<N>` / `ck<N>` / `h`. "
+            f"Expected `- [ ] <id>: <label>` in composer mode, or the same "
+            f"entry with `[~]` / `[x]` in runtime mode, where `<id>` "
+            f"matches `s<N>` / `ck<N>` / `h`. "
             f"Reference: {REF_STAGE_CLAIMS}."
         )
 
-    non_empty = [
-        (raw, marker, nid, label, body)
-        for (raw, marker, nid, label, body) in entries
-        if marker.strip() != ""
-    ]
-    if non_empty:
-        offenders = "; ".join(
-            f"`[{marker}] {body}`" for (_r, marker, _nid, _l, body) in non_empty
-        )
-        issues.append(
-            f"`## Stage Claims` contains pre-filled markers: {offenders}. "
-            f"Composer must seed only `- [ ]`; executors flip markers to `[~]` / `[x]` "
-            f"at runtime. "
-            f"Reference: {REF_STAGE_CLAIMS}."
-        )
+    if claims_mode == "composer":
+        non_empty = [
+            (raw, marker, nid, label, body)
+            for (raw, marker, nid, label, body) in entries
+            if marker.strip() != ""
+        ]
+        if non_empty:
+            offenders = "; ".join(
+                f"`[{marker}] {body}`" for (_r, marker, _nid, _l, body) in non_empty
+            )
+            issues.append(
+                f"`## Stage Claims` contains pre-filled markers: {offenders}. "
+                f"Composer must seed only `- [ ]`; execution updates markers to "
+                f"`[~]` / `[x]` at runtime. Re-run with "
+                f"`--claims-mode runtime` to validate an in-progress or "
+                f"completed runtime ledger. "
+                f"Reference: {REF_STAGE_CLAIMS}."
+            )
 
     # Id-level checks only make sense on well-formed entries.
     well_formed = [nid for (_r, _m, nid, _l, _b) in entries if nid is not None]
@@ -1773,19 +1800,30 @@ def validate_id_alignment(
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = argv if argv is not None else sys.argv[1:]
+    parser = argparse.ArgumentParser(
+        description="Validate an executable-plan markdown file."
+    )
+    parser.add_argument("path", type=Path, help="Path to the plan markdown file.")
+    parser.add_argument(
+        "--claims-mode",
+        choices=sorted(ALLOWED_CLAIMS_MODES),
+        default="composer",
+        help=(
+            "Stage Claims validation mode. Use `composer` for initial plans "
+            "with only `[ ]` markers, or `runtime` for in-progress / "
+            "completed ledgers containing `[~]` or `[x]`."
+        ),
+    )
 
-    if len(args) != 1:
-        print("Usage: validate-plan.py path/to/plan.md", file=sys.stderr)
-        return 2
+    args = parser.parse_args(sys.argv[1:] if argv is None else argv)
 
-    path = Path(args[0])
+    path = args.path
     if not path.exists():
         print(f"File not found: {path}", file=sys.stderr)
         return 2
 
     text = path.read_text(encoding="utf-8")
-    issues, warnings = validate(text, path)
+    issues, warnings = validate(text, path, claims_mode=args.claims_mode)
 
     if issues:
         print("PLAN VALIDATION FAILED")

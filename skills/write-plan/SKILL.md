@@ -134,6 +134,7 @@ If critical ambiguity remains, stop and ask focused questions before generating 
   Assemble the full plan by starting from [`plan_template.md`](plan_template.md) (`cp plan_template.md plan.<contract-profile>.<task-type>.md`) and filling in every placeholder, then add any conditional sections required by the chosen `contract profile`. Seed `## Stage Claims` with one `- [ ] <id>: <label>` entry per DAG node in topological order, ending with `- [ ] h: Handoff`.
 10. **Self-Review & Finalize**
   Run through the [Self-Review Checklist](#self-review-checklist), then run `python3 scripts/validate-plan.py <plan-file>`. Resolve every error before handing off. If a warning is intentionally left in (e.g. a `TODO` the user must answer), surface it to the next agent.
+  This default validator mode is for composer output and requires `## Stage Claims` to contain only unclaimed `[ ]` entries. After execution begins, validate an in-progress or completed ledger with `python3 scripts/validate-plan.py --claims-mode runtime <plan-file>`.
 
 ## Context Scope
 
@@ -210,4 +211,5 @@ Diagnostic questions for finalizing — validator covers shape; this catches sem
 - **Debug log starting point** (executor at debug-loop entry): `cp debug_log_template.md debug.<contract-profile>.<task-type>.<MMDDHHMM>.md` — see [debug_log_template.md](debug_log_template.md).
 - Contract details: see [reference.md](reference.md)
 - Concrete examples and fallback guidance: see [examples.md](examples.md)
-- Validator (required by Step 10): `python3 scripts/validate-plan.py <plan-file>` — see [scripts/validate-plan.py](scripts/validate-plan.py)
+- Composer validator (required by Step 10): `python3 scripts/validate-plan.py <plan-file>` — see [scripts/validate-plan.py](scripts/validate-plan.py)
+- Runtime validator for executed ledgers: `python3 scripts/validate-plan.py --claims-mode runtime <plan-file>`

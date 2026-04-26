@@ -1,6 +1,6 @@
 # Agent Toolkit / Agent 工具箱
 
-Domain-specific skills and commands for AI coding agents (Cursor, OpenAI Codex, Claude Code).
+Domain-specific skills for AI coding agents (Cursor, OpenAI Codex, Claude Code).
 
 面向特定领域的 AI 编程代理扩展工具，适用于 Cursor、OpenAI Codex 和 Claude Code。
 
@@ -16,7 +16,6 @@ This repo is the **domain-specific extension layer** of the
 | Type / 类型 | Location / 路径 | Cursor | Claude Code | Codex |
 |---|---|---|---|---|
 | **Skills** | `skills/<name>/SKILL.md` | `.cursor/skills/<name>/` | `.claude/skills/<name>/` | `.agents/skills/<name>/` |
-| **Commands** | `commands/<name>.md` | `.cursor/commands/` | `.claude/commands/` (legacy) | via AGENTS.md |
 
 **Why a separate repo? / 为什么单独一个仓库？**
 
@@ -30,13 +29,10 @@ This repo is the **domain-specific extension layer** of the
 
 ```
 agent-toolkit/                   ← This repo / 本仓库
-├── skills/                      ← Agent Skills (Cursor + Claude Code)
-│   └── <skill-name>/
-│       └── SKILL.md             # Cross-tool skill entry point / 跨工具技能入口
-│       └── references/          # Optional reference files / 可选参考文件
-│
-└── commands/                    ← Slash commands (Cursor + CC compatibility)
-    └── <command-name>.md
+└── skills/                      ← Agent Skills (Cursor + Claude Code + Codex)
+    └── <skill-name>/
+        └── SKILL.md             # Cross-tool skill entry point / 跨工具技能入口
+        └── references/          # Optional reference files / 可选参考文件
 ```
 
 ### Naming Conventions / 命名约定
@@ -44,7 +40,6 @@ agent-toolkit/                   ← This repo / 本仓库
 | Type / 类型 | Format / 格式 | Pattern / 模式 | Examples / 示例 |
 |---|---|---|---|
 | `skill-name` | kebab-case | `<verb>-<noun>` | `parse-ncu`, `profile-kernel`, `cluster-launch` |
-| `command-name` | kebab-case | imperative verb phrase | `pre-commit`, `run-bench`, `review` |
 
 - **MUST** use lowercase letters and hyphens only — no underscores, no camelCase / 只允许小写字母和连字符，禁止下划线和驼峰
 - **MUST** start with a verb for skills (`parse-`, `profile-`, `run-`) — names should describe *what the skill does* / Skill 名必须以动词开头，体现其功能
@@ -83,27 +78,15 @@ git commit -m "Add <skill-name> skill"
 
 ---
 
-## 5. Adding a New Command / 新增 Command
+## 5. Skills Catalog / 技能目录
 
-```bash
-# Create commands/<command-name>.md
-git add commands/<command-name>.md
-git commit -m "Add <command-name> command"
-```
+See [`skills/README.md`](skills/README.md) for the full catalog.
 
-`agent-sync` deploys it to `.cursor/commands/` and `.claude/commands/` on next run. Note: Claude Code has deprecated `.claude/commands/` in favor of `.claude/skills/`. For new content, prefer the skill format.
-
-`agent-sync` 下次运行时会部署到 `.cursor/commands/` 和 `.claude/commands/`。注意：Claude Code 已将 `.claude/commands/` 标记为 deprecated，推荐使用 skill 格式。
+完整目录见 [`skills/README.md`](skills/README.md)。
 
 ---
 
-## 6. Skills & Commands
-
-See [`skills/README.md`](skills/README.md) and [`commands/README.md`](commands/README.md) for the full catalog.
-
----
-
-## 7. Roadmap
+## 6. Roadmap
 
 - [ ] **Cluster Agent skill** — Provides a cluster-launched agent with structured working context: target compute node, Docker container, code/data paths, and an ordered task list; reports results after each step and halts on error.
   为在 cluster 上启动的 agent 提供结构化的工作环境上下文：目标 compute node、Docker 容器名、代码/数据路径，以及需要按序执行的任务列表；每步执行后报告结果，遇错即停。

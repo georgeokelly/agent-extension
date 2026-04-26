@@ -37,7 +37,7 @@ Every generated plan must include the following top-level structure: 5 metadata 
 Two boilerplate blocks inside the template — `## Debug Log Standard` and `## Stage Claims` — ship with default blockquote wording the composer can drop in as-is. Rewording is allowed when it aids clarity, as long as the intent is preserved:
 
 - `## Debug Log Standard` still points the executor at the debug log format and at the filename convention `debug.<contract-profile>.<task-type>.<MMDDHHMM>.md`. See [Debug Log Format](#debug-log-format) for format details.
-- `## Stage Claims` still describes the three-state ledger protocol. See [Stage Claims](#stage-claims) for the claim protocol. The validator only checks the ledger entries (`- [ ] <id>: <label>`); the blockquote wording itself is not enforced.
+- `## Stage Claims` still describes the three-state ledger protocol. See [Stage Claims](#stage-claims) for the claim protocol. The validator checks the ledger entries (`- [ ] <id>: <label>` in composer mode; `[~]` / `[x]` are allowed only in runtime mode); the blockquote wording itself is not enforced.
 
 The core contract defines the minimum safe structure. It does **not** require every plan to prescribe identical implementation behavior.
 
@@ -327,7 +327,7 @@ Placement:
 
 ### Stage Claims
 
-The `## Stage Claims` section is the plan's runtime coordination ledger. It tracks claim state over every DAG node (stages `s*`, checkpoints `ck*`, handoff `h`) so one or multiple executors can work on the same plan without collision.
+The `## Stage Claims` section is the plan's runtime coordination ledger. It tracks claim state over every DAG node (stages `s*`, checkpoints `ck*`, handoff `h`) so one or multiple executors can coordinate work on the same plan without collision.
 
 Entry format: `- [ ] <id>: <label>`. The `<id>` is the authoritative key — it must match a DAG node id one-to-one. The `<label>` is display-only and may be abbreviated.
 
@@ -345,13 +345,13 @@ Composer seeds one entry per DAG node in readable topological order. The `h` han
 
 Claim protocol:
 
-1. An executor scans `## Stage Claims` together with `## Dependency Graph`.
+1. A runtime coordinator scans `## Stage Claims` together with `## Dependency Graph`.
 2. A node is **claimable** when all three hold:
   - its marker is `- [ ]`,
   - every upstream DAG node is `- [x]`,
   - no other executor has left `- [~]` on it.
-3. The executor flips `- [ ]` → `- [~] ... — <agent-id> @ <MMDDHHMM>` and starts work.
-4. On completion, the executor flips `- [~]` → `- [x] ... — <agent-id> @ <MMDDHHMM>`.
+3. The runtime coordinator flips `- [ ]` → `- [~] ... — <agent-id> @ <MMDDHHMM>` and assigns or starts work.
+4. On completion, the runtime coordinator flips `- [~]` → `- [x] ... — <agent-id> @ <MMDDHHMM>`.
 5. When every earlier entry is `- [x]`, the `h` node becomes claimable. Marking `h` as `- [x]` concludes the plan.
 
 Checkpoints (`ck*`) in the ledger:
@@ -541,6 +541,14 @@ python3 scripts/validate-plan.py path/to/plan.md
 ```
 
 Run it from the skill directory when using the relative form above.
+
+The default mode validates composer output and therefore requires every
+`## Stage Claims` entry to be seeded as `- [ ]`. Once execution has started,
+validate an in-progress or completed execution ledger with runtime mode:
+
+```bash
+python3 scripts/validate-plan.py --claims-mode runtime path/to/plan.md
+```
 
 Scope of what the validator covers vs. what it does not:
 
@@ -768,7 +776,7 @@ A few terms appear in both the plan-writing and plan-execution rule sets with di
 | `Explicit checkpoint: human_review`       | Use only when user explicitly wants involvement or high-risk ambiguity remains unresolved; `Mode: human_review`      | Executor pauses execution and waits for human                                                                                  |
 | `Explicit checkpoint: hybrid`             | Use when you want auto first with human as fallback; `Mode: hybrid`                                                  | Executor runs auto review; escalates to human on failure                                                                       |
 | `Handoff` node (`h`)                      | Declare the `h` node as single DAG sink; give it handoff-shape content with plan-specific Checklist                  | Executor treats as any other node (claim → work → mark `[x]`); marking `h` `[x]` concludes the plan                            |
-| `Stage Claims` entries                    | Seed one `- [ ] <id>: <label>` per DAG node in readable topological order; never pre-fill `[~]`/`[x]`                | Executor flips `[ ]` → `[~]` at claim, `[~]` → `[x]` at completion; a `[~]` blocks other executors from claiming the same node |
+| `Stage Claims` entries                    | Seed one `- [ ] <id>: <label>` per DAG node in readable topological order; never pre-fill `[~]`/`[x]`                | Runtime mode permits executors to flip `[ ]` → `[~]` at claim and `[~]` → `[x]` at completion; a `[~]` blocks other executors from claiming the same node |
 | `TODO` / `TBD` in plan text               | Soft placeholder for a gap you could not resolve during drafting                                                     | Validator emits non-blocking warning; a downstream agent surfaces it to the user for clarification before final execution      |
 | Per-stage 15 tool turns                   | *(Not yours — do not apply this budget to your own context-gathering)*                                               | Executor budget per stage; exhaustion counts as unsuccessful self-review and triggers escalation                               |
 | 3 × same-action / same-hypothesis retries | *(Not yours — plan writing has no retry concept)*                                                                    | Executor's debug-loop retry limit within the same hypothesis or action                                                         |
