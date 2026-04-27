@@ -126,6 +126,47 @@ Before running a child agent, identify:
 If the user did not authorize file edits by a nested agent, either ask or run
 the child in read-only/review mode.
 
+## Long-Running / Background Runs
+
+Short tasks may run synchronously with stdout redirected to a result file. Long
+reviews, deep implementation, or multi-CLI comparison runs should use either an
+explicit timeout or a background run with result and log files.
+
+For background runs, the parent agent must record:
+
+- child session id, process id, or terminal session id;
+- result path and log path;
+- command shape, excluding secrets;
+- workspace;
+- selected model or model-default policy;
+- permission/sandbox mode;
+- poll cadence and timeout/termination policy.
+
+Use repo-external result paths such as `/tmp/<cli>-<task>-<timestamp>-<pid>.json`
+or a dedicated log directory outside the workspace. Do not use generic names
+such as `/tmp/result.json` or `/tmp/cursor-review.json` for real runs, because
+parallel child tasks can overwrite each other. Prefer a readable task slug plus
+a timestamp, process id, or random suffix.
+
+If the parent agent needs to keep interacting with the user, the child result
+must not be a hard dependency of the current turn unless immediate integration
+is explicitly required. The parent may report that the child run has started,
+including the result/log paths and poll plan, then continue other work.
+
+Poll background runs deliberately, for example every 30s/60s during active
+supervision or only when the user asks for status. Completion requires both the
+child process exiting and the expected result file existing in a parseable form.
+
+Define termination before launch. If a child run exceeds the expected duration,
+ask whether to keep waiting, stop the child process, or leave it running for
+later collection. Do not abandon a child process without recording how to find
+or stop it.
+
+For read-only review, critique, brainstorm, and test/eval tasks, default to
+read-only modes such as `--mode ask`, planning modes, or read-only sandbox
+settings. Use writable sandbox or bounded-edit modes only for explicitly
+authorized implementation tasks.
+
 ## Authentication Boundary
 
 If the selected CLI reports an authentication problem, stop and ask the user to
