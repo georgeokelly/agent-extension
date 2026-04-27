@@ -1,0 +1,36 @@
+title: "Scholarly Three-Column Fixture"
+run_date: "2026-04-27"
+sources:
+  - id: "source-markdown"
+    label: "Fixture source Markdown"
+    path: "source.md"
+  - id: "layout-figure"
+    label: "Local SVG layout figure"
+    path: "assets/layout-study.svg"
+shape_config:
+  layout: "scholarly-3col"
+  shell:
+    root: "div.document-shell"
+    left: "aside.left-outline"
+    center: "main.paper-column"
+    right: "aside.right-rail"
+  max_paper_width: "52rem"
+  mobile_behavior: "Collapse side rails above and below the paper column."
+key_findings:
+  - "The outline belongs outside the article body."
+  - "Source, version, and caveat metadata belong in the right rail."
+  - "The expected HTML fixture embeds local SVG assets for offline review."
+caveats:
+  - "Expected HTML is hand-authored as a structural fixture."
+  - "The formula uses MathML to avoid remote math script dependencies."
+  - "The compact CSS is illustrative and not a full production stylesheet."
+version_matrix:
+  renderer_contract: "scholarly-3col-v0"
+  source_format: "Markdown with YAML sidecar"
+  asset_embedding: "data-uri-svg"
+  math_strategy: "MathML"
+  css_scope: "inline-compact"
+renderer_notes:
+  - "Pandoc or another Markdown renderer should produce a fragment for the paper column."
+  - "The custom shell owns document layout, side rails, responsive behavior, and metadata placement."
+  - "The expected HTML embeds assets/layout-study.svg as a data:image/svg+xml URI."

@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scholarly Three-Column Fixture</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #eef1f4;
+      --paper: #fffdf8;
+      --ink: #20252b;
+      --muted: #5f6b76;
+      --line: #d8dde3;
+      --accent: #2f6f63;
+      --rail: #f7f3ec;
+      --code: #18202a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      line-height: 1.62;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration-thickness: 0.08em;
+      text-underline-offset: 0.18em;
+    }
+
+    .document-shell {
+      display: grid;
+      grid-template-columns: minmax(12rem, 16rem) minmax(0, 52rem) minmax(13rem, 18rem);
+      gap: 1.6rem;
+      max-width: 118rem;
+      margin: 0 auto;
+      padding: 2rem clamp(1rem, 3vw, 3rem);
+    }
+
+    .left-outline,
+    .right-rail {
+      align-self: start;
+      max-height: calc(100vh - 4rem);
+      overflow: auto;
+      position: sticky;
+      top: 2rem;
+      color: var(--muted);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 0.88rem;
+    }
+
+    .left-outline details {
+      border-left: 3px solid var(--accent);
+      padding-left: 1rem;
+    }
+
+    .left-outline summary {
+      cursor: pointer;
+      display: none;
+      font-weight: 700;
+    }
+
+    .left-outline details:not([open]) > :not(summary) {
+      display: block;
+    }
+
+    .left-outline nav a {
+      display: block;
+      margin: 0.35rem 0;
+    }
+
+    .paper-column {
+      min-width: 0;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      padding: clamp(1.25rem, 4vw, 3rem);
+    }
+
+    .paper-column h1,
+    .paper-column h2,
+    .paper-column h3 {
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.22;
+    }
+
+    .paper-column h1 {
+      margin: 0 0 0.75rem;
+      font-size: clamp(2rem, 3vw, 2.7rem);
+    }
+
+    .paper-column h2 {
+      border-top: 1px solid var(--line);
+      margin-top: 2.2rem;
+      padding-top: 1rem;
+      font-size: 1.35rem;
+    }
+
+    .summary {
+      border-left: 4px solid var(--accent);
+      margin: 1.5rem 0 2rem;
+      padding-left: 1rem;
+      color: #34403f;
+      font-size: 1.05rem;
+    }
+
+    figure {
+      margin: 1.6rem 0;
+    }
+
+    figure img {
+      display: block;
+      height: auto;
+      max-width: 100%;
+      border: 1px solid var(--line);
+      background: #ffffff;
+    }
+
+    figcaption,
+    .formula-note {
+      color: var(--muted);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 0.88rem;
+    }
+
+    math {
+      display: block;
+      margin: 1.2rem 0;
+      overflow-x: auto;
+      padding: 0.6rem 0;
+      text-align: center;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      border-collapse: collapse;
+      min-width: 34rem;
+      width: 100%;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 0.55rem 0.7rem;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    pre {
+      background: var(--code);
+      color: #f3f7fb;
+      overflow-x: auto;
+      padding: 1rem;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    .right-rail {
+      background: var(--rail);
+      border: 1px solid var(--line);
+      padding: 1rem;
+    }
+
+    .right-rail h2,
+    .right-rail h3 {
+      color: var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.25;
+      margin: 0 0 0.6rem;
+    }
+
+    .rail-block {
+      border-top: 1px solid var(--line);
+      padding-top: 0.85rem;
+      margin-top: 0.85rem;
+    }
+
+    .right-rail ul,
+    .right-rail dl {
+      margin: 0;
+      padding-left: 1rem;
+    }
+
+    .right-rail dt {
+      color: var(--ink);
+      font-weight: 700;
+      margin-top: 0.45rem;
+    }
+
+    .right-rail dd {
+      margin: 0 0 0.35rem;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #11161d;
+        --paper: #181c22;
+        --ink: #edf1f5;
+        --muted: #aab5c0;
+        --line: #343d48;
+        --accent: #7bc8b8;
+        --rail: #202127;
+        --code: #090d12;
+      }
+
+      .summary {
+        color: #c5d7d2;
+      }
+
+      figure img {
+        background: #f8fafc;
+      }
+    }
+
+    @media (max-width: 960px) {
+      .document-shell {
+        display: block;
+        padding: 0.8rem;
+      }
+
+      .left-outline,
+      .right-rail {
+        max-height: none;
+        overflow: visible;
+        position: static;
+      }
+
+      .left-outline {
+        margin-bottom: 0.8rem;
+      }
+
+      .left-outline details {
+        background: var(--rail);
+        border: 1px solid var(--line);
+        padding: 0.8rem 1rem;
+      }
+
+      .left-outline summary {
+        display: block;
+      }
+
+      .left-outline details:not([open]) > :not(summary) {
+        display: none;
+      }
+
+      .paper-column,
+      .right-rail {
+        margin-top: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body class="scholarly-3col">
+  <div class="document-shell">
+    <aside class="left-outline" aria-label="Section outline">
+      <details class="outline-box" open>
+        <summary>Sections</summary>
+        <nav>
+          <a href="#motivation">1. Motivation</a>
+          <a href="#scoring-model">2. Scoring Model</a>
+          <a href="#fixture-matrix">3. Fixture Matrix</a>
+          <a href="#caveats">4. Caveats</a>
+          <a href="#references">References</a>
+        </nav>
+      </details>
+    </aside>
+
+    <main class="paper-column" id="paper">
+      <article>
+        <header>
+          <h1>Scholarly Three-Column Fixture</h1>
+          <p class="summary"><strong>Summary:</strong> This sample verifies that a Markdown research note can become a self-contained scholarly HTML document with a persistent outline, a restrained paper column, and a metadata rail for provenance and caveats.</p>
+        </header>
+
+        <section id="motivation" aria-labelledby="motivation-heading">
+          <h2 id="motivation-heading">1. Motivation</h2>
+          <p>The fixture keeps navigational structure outside the article flow so the paper body remains focused on the argument. The source still reads like ordinary Markdown, while the rendered shell supplies the three-column layout.</p>
+          <figure>
+            <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NDAiIGhlaWdodD0iMjgwIiB2aWV3Qm94PSIwIDAgNjQwIDI4MCIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsbGVkYnk9InRpdGxlIGRlc2MiPgogIDx0aXRsZSBpZD0idGl0bGUiPlNjaG9sYXJseSB0aHJlZS1jb2x1bW4gbGF5b3V0IHN0dWR5PC90aXRsZT4KICA8ZGVzYyBpZD0iZGVzYyI+QSBkaWFncmFtIHNob3dpbmcgYSBsZWZ0IG91dGxpbmUsIGNlbnRyYWwgcGFwZXIgY29sdW1uLCBhbmQgcmlnaHQgbWV0YWRhdGEgcmFpbC48L2Rlc2M+CiAgPHJlY3Qgd2lkdGg9IjY0MCIgaGVpZ2h0PSIyODAiIHJ4PSIxMiIgZmlsbD0iI2Y4ZmFmYyIvPgogIDxyZWN0IHg9IjM4IiB5PSI0NCIgd2lkdGg9IjEyOCIgaGVpZ2h0PSIxOTIiIHJ4PSI4IiBmaWxsPSIjZTZmMGVmIiBzdHJva2U9IiM1ZDdmNzgiIHN0cm9rZS13aWR0aD0iMiIvPgogIDxyZWN0IHg9IjE5NiIgeT0iMzAiIHdpZHRoPSIyNDgiIGhlaWdodD0iMjIwIiByeD0iOCIgZmlsbD0iI2ZmZmZmZiIgc3Ryb2tlPSIjNDA0ODUwIiBzdHJva2Utd2lkdGg9IjIiLz4KICA8cmVjdCB4PSI0NzQiIHk9IjQ0IiB3aWR0aD0iMTI4IiBoZWlnaHQ9IjE5MiIgcng9IjgiIGZpbGw9IiNmOGViZDgiIHN0cm9rZT0iI2E1NmIzNCIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPHRleHQgeD0iMTAyIiB5PSI3OCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE2IiBmb250LXdlaWdodD0iNzAwIiBmaWxsPSIjMjQ0MDNiIj5vdXRsaW5lPC90ZXh0PgogIDx0ZXh0IHg9IjMyMCIgeT0iNjYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzIwMjUyYiI+cGFwZXIgY29sdW1uPC90ZXh0PgogIDx0ZXh0IHg9IjUzOCIgeT0iNzgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzZmNDMxYyI+bWV0YWRhdGE8L3RleHQ+CiAgPHBhdGggZD0iTTY4IDEwOCBIMTM2IE02OCAxMzYgSDE0OCBNNjggMTY0IEgxMjYgTTY4IDE5MiBIMTQyIiBzdHJva2U9IiM1ZDdmNzgiIHN0cm9rZS13aWR0aD0iOCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPHBhdGggZD0iTTIzMCAxMDAgSDQxMCBNMjMwIDEyOCBIMzk4IE0yMzAgMTU2IEg0MTQgTTIzMCAxODQgSDM3NiIgc3Ryb2tlPSIjNmI3MjgwIiBzdHJva2Utd2lkdGg9IjciIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogIDxwYXRoIGQ9Ik01MDQgMTEyIEg1NzIgTTUwNCAxNDIgSDU1OCBNNTA0IDE3MiBINTgyIE01MDQgMjAyIEg1NDgiIHN0cm9rZT0iI2E1NmIzNCIgc3Ryb2tlLXdpZHRoPSI4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMTc2IDE0MCBIMTg4IiBzdHJva2U9IiM2NjcwODUiIHN0cm9rZS13aWR0aD0iMyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+CiAgPHBhdGggZD0iTTQ1MiAxNDAgSDQ2NCIgc3Ryb2tlPSIjNjY3MDg1IiBzdHJva2Utd2lkdGg9IjMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K" alt="Diagram showing a left outline, central paper column, and right metadata rail">
+            <figcaption>Figure 1: Local SVG asset embedded as a data URI for offline review.</figcaption>
+          </figure>
+        </section>
+
+        <section id="scoring-model" aria-labelledby="scoring-heading">
+          <h2 id="scoring-heading">2. Scoring Model</h2>
+          <p>For a compact smoke test, the rendered output represents the weighted score as offline MathML:</p>
+          <math display="block" xmlns="http://www.w3.org/1998/Math/MathML" aria-label="S equals the weighted sum of observed signals divided by the sum of weights">
+            <mrow>
+              <mi>S</mi>
+              <mo>=</mo>
+              <mfrac>
+                <mrow>
+                  <munderover>
+                    <mo>&#8721;</mo>
+                    <mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow>
+                    <mi>n</mi>
+                  </munderover>
+                  <msub><mi>w</mi><mi>i</mi></msub>
+                  <msub><mi>x</mi><mi>i</mi></msub>
+                </mrow>
+                <mrow>
+                  <munderover>
+                    <mo>&#8721;</mo>
+                    <mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow>
+                    <mi>n</mi>
+                  </munderover>
+                  <msub><mi>w</mi><mi>i</mi></msub>
+                </mrow>
+              </mfrac>
+            </mrow>
+          </math>
+          <p class="formula-note">Formula strategy: MathML keeps this expected fixture offline-safe without a remote script dependency.</p>
+        </section>
+
+        <section id="fixture-matrix" aria-labelledby="matrix-heading">
+          <h2 id="matrix-heading">3. Fixture Matrix</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>Expected rendering</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Local figure</td>
+                  <td>Embedded <code>data:image/svg+xml</code> URI</td>
+                </tr>
+                <tr>
+                  <td>Formula</td>
+                  <td>MathML, no remote script dependency</td>
+                </tr>
+                <tr>
+                  <td>Outline</td>
+                  <td>Left rail on desktop, collapsible block on mobile</td>
+                </tr>
+                <tr>
+                  <td>Metadata</td>
+                  <td>Right rail with source and caveat summaries</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <pre><code class="language-python">def weighted_score(values: list[float], weights: list[float]) -&gt; float:
+    """Return a normalized weighted score for fixture examples."""
+    return sum(value * weight for value, weight in zip(values, weights)) / sum(weights)</code></pre>
+        </section>
+
+        <section id="caveats" aria-labelledby="caveats-heading">
+          <h2 id="caveats-heading">4. Caveats</h2>
+          <ul>
+            <li>The expected HTML is hand-authored so DOM regressions are easy to inspect.</li>
+            <li>The source Markdown is a fixture, not a benchmark for typographic quality.</li>
+            <li>Visual browser checks remain separate from this structural example.</li>
+          </ul>
+        </section>
+
+        <section id="references" aria-labelledby="references-heading">
+          <h2 id="references-heading">References</h2>
+          <ol>
+            <li>Render HTML skill fixture contract, local workspace example.</li>
+            <li>Metadata sidecar in <code>metadata.yaml</code>.</li>
+            <li>Local SVG figure in <code>assets/layout-study.svg</code>.</li>
+          </ol>
+        </section>
+      </article>
+    </main>
+
+    <aside class="right-rail" aria-label="Renderer metadata">
+      <h2>Metadata</h2>
+      <section class="rail-block">
+        <h3>Run</h3>
+        <dl>
+          <dt>Date</dt>
+          <dd>2026-04-27</dd>
+          <dt>Layout</dt>
+          <dd>scholarly-3col</dd>
+        </dl>
+      </section>
+      <section class="rail-block">
+        <h3>Sources</h3>
+        <ul>
+          <li><code>source.md</code></li>
+          <li><code>metadata.yaml</code></li>
+          <li><code>assets/layout-study.svg</code></li>
+        </ul>
+      </section>
+      <section class="rail-block">
+        <h3>Shape Config</h3>
+        <dl>
+          <dt>Root</dt>
+          <dd><code>div.document-shell</code></dd>
+          <dt>Left</dt>
+          <dd><code>aside.left-outline</code></dd>
+          <dt>Center</dt>
+          <dd><code>main.paper-column</code></dd>
+          <dt>Right</dt>
+          <dd><code>aside.right-rail</code></dd>
+        </dl>
+      </section>
+      <section class="rail-block">
+        <h3>Key Findings</h3>
+        <ul>
+          <li>The outline belongs outside the article body.</li>
+          <li>Source, version, and caveat metadata belong in the right rail.</li>
+          <li>The fixture embeds local SVG assets for offline review.</li>
+        </ul>
+      </section>
+      <section class="rail-block">
+        <h3>Caveats</h3>
+        <ul>
+          <li>Expected HTML is hand-authored as a structural fixture.</li>
+          <li>The formula uses MathML to avoid remote math script dependencies.</li>
+          <li>The compact CSS is illustrative.</li>
+        </ul>
+      </section>
+      <section class="rail-block">
+        <h3>Version Matrix</h3>
+        <dl>
+          <dt>renderer_contract</dt>
+          <dd>scholarly-3col-v0</dd>
+          <dt>asset_embedding</dt>
+          <dd>data-uri-svg</dd>
+          <dt>math_strategy</dt>
+          <dd>MathML</dd>
+        </dl>
+      </section>
+      <section class="rail-block">
+        <h3>Renderer Notes</h3>
+        <ul>
+          <li>Renderer output should feed the paper column as a fragment.</li>
+          <li>The custom shell owns layout, side rails, and metadata placement.</li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+</body>
+</html>
