@@ -100,7 +100,9 @@ The layout has three durable responsibilities:
   headings; collapsible or top-positioned navigation on small screens.
 - `paper-column`: the scholarly article surface with title block, optional
   abstract-like summary, rendered Markdown body, sections, appendices,
-  references, figures, tables, code blocks, and formulas.
+  references, figures, tables, code blocks, and formulas. It is a hard
+  inline-size boundary: oversized figures, tables, code blocks, and formulas
+  must scroll inside it, not widen the shell or overlap either rail.
 - `right-rail`: compact margin notes for source and rendering facts that should
   remain visible without dominating the paper. Use rule-separated notes, not
   bordered cards, chips, dashboards, or large metric panels.
@@ -231,8 +233,8 @@ Supported figure modes:
 
 - `normal`: figure stays within the paper column and uses a caption below the
   asset.
-- `wide`: figure may expand to the available middle reading area while keeping
-  margins and side rails stable.
+- `wide`: figure is still bounded by the paper column in the three-column shell;
+  use a rail-free shell for true page-wide figures.
 - `margin-caption`: figure asset stays in the paper column; caption may move
   into the right rail only on wide viewports where the rail is visible and the
   association remains accessible.
@@ -279,8 +281,9 @@ Rules:
   inline icon or badge.
 - Add intrinsic `width`, `height`, `data-intrinsic-width`, and
   `data-intrinsic-height` when the local asset format exposes dimensions.
-- Keep the figure viewport width equal to the paper column for `normal` figures;
-  use `wide` only when explicitly useful.
+- Keep the figure viewport width equal to the paper column for `normal` figures.
+  Avoid `100vw`, fixed pixel widths, and generated inline widths that can escape
+  `.paper-column`.
 - Use the image aspect ratio to set the viewport height, with `max-height: 70vh`
   and `object-fit: contain` as the overflow fallback.
 - Support inline scale and drag inside `.figure-viewport` for close inspection.
@@ -292,8 +295,11 @@ Rules:
 - Preserve meaningful alt text.
 - Keep remote `https://` images external unless strict offline output is
   requested and the user approves fetching remote assets.
-- Tables remain in the paper column, with horizontal overflow containment on
-  narrow screens.
+- Tables use GitHub Markdown-style rendering: left-aligned block table,
+  `max-content` width, 1px borders, `6px 13px` cells, alternating rows, and
+  horizontal overflow contained inside `.paper-column`. Wrap custom or very wide
+  tables in `.table-scroll`; do not stretch narrow tables to full width by
+  default.
 
 ## Responsive Behavior
 

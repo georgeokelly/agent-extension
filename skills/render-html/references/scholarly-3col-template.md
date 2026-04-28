@@ -50,6 +50,9 @@ Contract rules:
 - `left-outline` links only to headings in `paper-column`.
 - `paper-column` is the only owner of article prose, appendices, references,
   formulas, tables, and figures.
+- `paper-column` is a hard inline-size boundary: figures, images, tables, code
+  blocks, and formulas must fit within it or scroll inside it. They must never
+  paint into `left-outline` or `right-rail`.
 - `right-rail` owns margin notes and compact metadata only; it must not become a
   dashboard, fact card column, or second article column.
 - The default table of contents must not appear as a folded in-flow block at the
@@ -247,11 +250,20 @@ body {
 .paper-column {
   grid-area: paper;
   min-width: 0;
+  width: min(100%, var(--main-width));
   max-width: var(--main-width);
+  justify-self: stretch;
+  overflow-wrap: break-word;
 }
 
 .paper-article {
+  min-width: 0;
+  max-width: 100%;
   background: transparent;
+}
+
+.paper-article > * {
+  max-width: 100%;
 }
 
 .paper-title-block {
@@ -358,6 +370,7 @@ code {
   border-radius: 2px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.86em;
+  overflow-wrap: anywhere;
 }
 
 pre {
@@ -385,17 +398,32 @@ pre code {
   font-size: 100%;
   line-height: inherit;
   white-space: pre;
+  overflow-wrap: normal;
+}
+
+.table-scroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 1rem 0 1.5rem;
 }
 
 table {
   display: block;
   width: max-content;
   max-width: 100%;
-  overflow: auto;
+  overflow-x: auto;
   border-spacing: 0;
   border-collapse: collapse;
-  margin: 1.2rem auto 1.7rem;
+  margin: 1rem 0 1.5rem;
   font-size: 0.9rem;
+}
+
+.table-scroll table {
+  display: table;
+  max-width: none;
+  margin: 0;
+  overflow: visible;
 }
 
 tr {
@@ -409,9 +437,11 @@ tr:nth-child(2n) {
 
 th,
 td {
+  max-width: min(34rem, calc(var(--main-width) - 2rem));
   padding: 6px 13px;
   border: 1px solid var(--table-border);
   vertical-align: top;
+  overflow-wrap: break-word;
 }
 
 th {
@@ -421,6 +451,8 @@ th {
 
 figure {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   margin: 2.25rem auto 2.5rem;
 }
 
@@ -437,6 +469,8 @@ figure img {
 .figure-viewport {
   position: relative;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   aspect-ratio: var(--figure-aspect-ratio, 16 / 9);
   max-height: 70vh;
   overflow: hidden;
@@ -577,7 +611,8 @@ figcaption {
 }
 
 .figure-wide {
-  width: min(100%, calc(var(--main-width) + 6rem));
+  width: 100%;
+  max-width: 100%;
 }
 
 .math {
@@ -972,7 +1007,10 @@ Renderer rules:
 - Normalize Markdown/Pandoc `figure > img` output into the
   `.figure-viewport[data-figure-viewport]` wrapper unless the image is a small
   inline icon or badge.
-- Normal figures occupy the same width as `.paper-column` prose: `width: 100%`.
+- Normal figures occupy the same width as `.paper-column` prose: `width: 100%`,
+  `max-width: 100%`, and no viewport-relative widths.
+- `wide` figures are still bounded by `.paper-column` in this three-column
+  shell. Use a different rail-free shell for true page-wide figures.
 - Figure height is stable after initial layout. Set
   `--figure-aspect-ratio: intrinsic_width / intrinsic_height` on
   `.figure-viewport` whenever intrinsic dimensions are known.
@@ -987,6 +1025,25 @@ Renderer rules:
 - The expanded viewer button opens a modal clone of the figure image. Inline
   constrained pan/zoom remains the default for technical documents where prose
   and figure details are read together.
+
+## Tables
+
+Tables should match GitHub Markdown table behavior inside the paper column:
+left-aligned block tables, 1px borders, `6px 13px` cells, alternating rows, and
+horizontal scroll for wide tables. Do not stretch narrow tables to the full
+paper width unless the source table itself needs it.
+
+Renderer rules:
+
+- Emit plain `<table>` for ordinary Markdown tables; the CSS baseline handles
+  GitHub-style display and horizontal overflow.
+- For custom HTML tables or tables with very wide cells, wrap the table in
+  `<div class="table-scroll">...</div>` and keep the table itself
+  `width: max-content`.
+- Keep table overflow inside `.paper-column`; table content must not widen the
+  grid or overlap `right-rail`.
+- Wrap long path-like inline `code` tokens inside cells with `overflow-wrap:
+  anywhere`, but preserve fenced code blocks with horizontal scroll.
 
 Normal figure:
 

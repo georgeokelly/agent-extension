@@ -167,7 +167,9 @@ be treated as the implementation contract:
 - `left-outline` for persistent numbered section navigation on desktop; hide or
   collapse it on narrow mobile viewports so article prose appears first.
 - `paper-column` for a paper-first title block, abstract-like summary, article
-  body, appendices, and references.
+  body, appendices, and references. Treat it as a hard inline-size boundary:
+  figures, tables, code blocks, and formulas must fit within it or scroll
+  inside it, never into the outline or metadata rail.
 - `right-rail` for margin-note style sources, shape/config facts, key findings,
   caveats, version matrix, run date, and renderer notes; do not render a
   dashboard/facts-card rail.
@@ -176,14 +178,17 @@ be treated as the implementation contract:
 - Interactive figures use `.figure-viewport[data-figure-viewport]`: normal
   figures match paper-column width, height comes from intrinsic aspect ratio,
   `max-height: 70vh` clamps very tall images, and scale/drag transforms only the
-  inner image without moving captions or surrounding prose.
+  inner image without moving captions or surrounding prose. Do not use viewport
+  widths or page-wide figures inside the three-column shell.
 - Figure controls include zoom in, zoom out, reset, and an expanded-viewer
   button. The expanded viewer is optional for reading; inline zoom/drag remains
   the primary inspection path when the reader needs surrounding prose visible.
 - Normalize Markdown/Pandoc `figure > img` output into that viewport wrapper
   unless the image is a small inline icon or badge.
-- Tables use GitHub Markdown-style borders, padding, zebra rows, centered narrow
-  tables, and horizontal overflow containment for wide tables.
+- Tables use GitHub Markdown-style left-aligned block layout, borders, padding,
+  zebra rows, max-content width, and horizontal overflow containment for wide
+  tables. Do not stretch narrow tables to full column width unless explicitly
+  requested by the source.
 - Code blocks use GitHub Markdown-style light/dark backgrounds, 16px padding,
   6px radius, 85% monospace text, and horizontal scroll.
 - Math rendered as MathML for strict offline output, or via MathJax/KaTeX only
@@ -218,6 +223,8 @@ A finished artifact should satisfy:
   alter article flow.
 - Inspectable figure controls expose an expanded-viewer button without making
   modal viewing mandatory.
+- Figures and tables never widen the three-column grid or overlap
+  `left-outline` / `right-rail`.
 - CSS is inline unless the user requested separate files.
 - `scholarly-3col` outputs include `document-shell`, `left-outline`,
   `paper-column`, and `right-rail`.

@@ -15,6 +15,7 @@
       --accent: #2f6f63;
       --rail: #f7f3ec;
       --code: #18202a;
+      --table-row-alt: #f6f8fa;
     }
 
     * {
@@ -78,6 +79,8 @@
 
     .paper-column {
       min-width: 0;
+      max-width: 100%;
+      overflow-wrap: break-word;
       background: var(--paper);
       border: 1px solid var(--line);
       padding: clamp(1.25rem, 4vw, 3rem);
@@ -111,6 +114,8 @@
     }
 
     figure {
+      max-width: 100%;
+      min-width: 0;
       margin: 1.6rem 0;
     }
 
@@ -138,21 +143,46 @@
     }
 
     .table-wrap {
+      width: 100%;
+      max-width: 100%;
       overflow-x: auto;
+      margin: 1rem 0 1.5rem;
     }
 
     table {
+      display: table;
       border-collapse: collapse;
-      min-width: 34rem;
-      width: 100%;
+      width: max-content;
+      max-width: none;
+      border-spacing: 0;
+      font-size: 0.9rem;
+    }
+
+    .paper-column > table {
+      display: block;
+      width: max-content;
+      max-width: 100%;
+      overflow-x: auto;
+      margin: 1rem 0 1.5rem;
+    }
+
+    tr {
+      background: var(--paper);
+      border-top: 1px solid var(--line);
+    }
+
+    tr:nth-child(2n) {
+      background: var(--table-row-alt);
     }
 
     th,
     td {
-      border-bottom: 1px solid var(--line);
-      padding: 0.55rem 0.7rem;
+      max-width: 34rem;
+      border: 1px solid var(--line);
+      padding: 6px 13px;
       text-align: left;
       vertical-align: top;
+      overflow-wrap: break-word;
     }
 
     pre {
@@ -213,6 +243,7 @@
         --accent: #7bc8b8;
         --rail: #202127;
         --code: #090d12;
+        --table-row-alt: #161b22;
       }
 
       .summary {
