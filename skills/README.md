@@ -61,6 +61,7 @@ Note: CC ignores unknown frontmatter fields, Cursor ignores CC-specific fields. 
 
 | Name / 名称 | Description / 描述 | Source / 来源 | License |
 |---|---|---|---|
+| `compose-report` | Compose record-and-explain technical reports with purpose/reader/length routing, component templates, benchmark disclosure, limitations, and self-check guidance / 编写记录与解释型技术报告，支持报告类型、读者、篇幅路由、组件模板、benchmark 披露、局限性和自检 | Original | — |
 | `drawio` | Generate draw.io diagrams (.drawio) with optional PNG/SVG/PDF export, HTML embedding, and Cursor canvas preview / 生成 draw.io 图表，支持导出、HTML 交互嵌入和 Cursor 内联预览 | [drawio-mcp](https://github.com/jgraph/drawio-mcp) | Apache-2.0 |
 | `render-html` | Render self-contained HTML documents from Markdown or HTML with embedded local image assets and scholarly academic styling / 从 Markdown 或 HTML 渲染自包含 HTML 文档，支持本地图片内嵌和学术文档排版 | Original, adapted from legacy `convert-md2html` | MIT |
 | `use-agent-cli` | Use Codex CLI, Cursor Agent, Claude Code, or opencode as delegated child agents with CLI-specific references, model/effort configuration, and long-running/background run orchestration / 将 Codex CLI、Cursor Agent、Claude Code 或 opencode 作为子 agent 调用，包含按 CLI 拆分的参考、model/effort 配置和长任务/后台运行编排 | Original | MIT |
